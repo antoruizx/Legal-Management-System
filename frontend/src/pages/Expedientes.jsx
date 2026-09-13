@@ -3,6 +3,21 @@ import { Link } from "react-router-dom";
 import { getExpedientes, deleteExpediente } from "../api/expedientesApi";
 import BackButton from "../components/BackButton";
 
+function getEstadoBadge(estado) {
+  switch (estado) {
+    case "Activo":
+      return { clase: "badge-success", dot: "dot-success" };
+    case "En trámite":
+      return { clase: "badge-info", dot: "dot-info" };
+    case "Cerrado":
+      return { clase: "badge-danger", dot: "dot-danger" };
+    case "Archivado":
+      return { clase: "badge-warning", dot: "dot-warning" };
+    default:
+      return { clase: "badge-neutral", dot: "" };
+  }
+}
+
 export default function Expedientes() {
   const [expedientes, setExpedientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,48 +51,66 @@ export default function Expedientes() {
   };
 
   if (loading) return <p>Cargando expedientes...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error) return <p style={{ color: "var(--danger)" }}>{error}</p>;
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="page-header">
         <BackButton />
         <h2>Expedientes</h2>
         <Link to="/expedientes/nuevo">
-          <button>+ Nuevo Expediente</button>
+          <button className="btn btn-primary">+ Nuevo Expediente</button>
         </Link>
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-        <thead>
-          <tr style={{ textAlign: "left", borderBottom: "1px solid #ccc" }}>
-            <th>Número</th>
-            <th>Carátula</th>
-            <th>Estado</th>
-            <th>Cliente</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {expedientes.map((e) => (
-            <tr key={e.id} style={{ borderBottom: "1px solid #eee" }}>
-              <td>{e.numero}</td>
-              <td>
-                <Link to={`/expedientes/${e.id}`}>{e.caratula}</Link>
-              </td>
-              <td>{e.estado}</td>
-              <td>{e.cliente ? `${e.cliente.nombre} ${e.cliente.apellido}` : "-"}</td>
-              <td>
-                <Link to={`/expedientes/${e.id}/editar`}>Editar</Link>
-                {" | "}
-                <button onClick={() => handleDelete(e.id)}>Eliminar</button>
-              </td>
+      <div className="card">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Carátula</th>
+              <th>Estado</th>
+              <th>Cliente</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {expedientes.map((e) => {
+              const estado = getEstadoBadge(e.estado);
+              return (
+                <tr key={e.id}>
+                  <td data-label="Número">{e.numero}</td>
+                  <td data-label="Carátula">
+                    <Link to={`/expedientes/${e.id}`} style={{ color: "var(--text-hi)", fontWeight: 500 }}>
+                      {e.caratula}
+                    </Link>
+                  </td>
+                  <td data-label="Estado">
+                    <span className={`badge ${estado.clase}`}>
+                      {estado.dot && <span className={`badge-dot ${estado.dot}`}></span>}
+                      {e.estado}
+                    </span>
+                  </td>
+                  <td data-label="Cliente">
+                    {e.cliente ? (
+                      <Link to={`/clientes/${e.cliente.id}`} className="link-action" style={{ color: "var(--text-hi)" }}>
+                        {e.cliente.nombre} {e.cliente.apellido}
+                      </Link>
+                    ) : "-"}
+                  </td>
+                  <td data-label="Acciones">
+                    <Link to={`/expedientes/${e.id}/editar`} className="link-action">Editar</Link>
+                    {" · "}
+                    <button className="btn-danger-ghost" onClick={() => handleDelete(e.id)}>Eliminar</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
-      {expedientes.length === 0 && <p>No hay expedientes cargados todavía.</p>}
+        {expedientes.length === 0 && <p className="empty-state">No hay expedientes cargados todavía.</p>}
+      </div>
     </div>
   );
 }

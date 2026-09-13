@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import ClienteForm from "./pages/ClienteForm";
+import ClienteDetalle from "./pages/ClienteDetalle";
 import Expedientes from "./pages/Expedientes";
 import ExpedienteForm from "./pages/ExpedienteForm";
 import ExpedienteDetalle from "./pages/ExpedienteDetalle";
@@ -33,6 +34,7 @@ function App() {
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/clientes/nuevo" element={<ClienteForm />} />
             <Route path="/clientes/:id/editar" element={<ClienteForm />} />
+            <Route path="/clientes/:id" element={<ClienteDetalle />} />
             <Route path="/expedientes" element={<Expedientes />} />
             <Route path="/expedientes/nuevo" element={<ExpedienteForm />} />
             <Route path="/expedientes/:id/editar" element={<ExpedienteForm />} />

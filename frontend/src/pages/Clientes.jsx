@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import { getClientes, deleteCliente } from "../api/clientesApi";
 import BackButton from "../components/BackButton";
 
+function iniciales(nombre, apellido) {
+  return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
+}
+
 export default function Clientes() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,48 +40,53 @@ export default function Clientes() {
   };
 
   if (loading) return <p>Cargando clientes...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error) return <p style={{ color: "var(--danger)" }}>{error}</p>;
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="page-header">
         <BackButton />
         <h2>Clientes</h2>
         <Link to="/clientes/nuevo">
-          <button>+ Nuevo Cliente</button>
+          <button className="btn btn-primary">+ Nuevo Cliente</button>
         </Link>
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-        <thead>
-          <tr style={{ textAlign: "left", borderBottom: "1px solid #ccc" }}>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>DNI</th>
-            <th>Email</th>
-            <th>Teléfono</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {clientes.map((c) => (
-            <tr key={c.id} style={{ borderBottom: "1px solid #eee" }}>
-              <td>{c.nombre}</td>
-              <td>{c.apellido}</td>
-              <td>{c.dni}</td>
-              <td>{c.email}</td>
-              <td>{c.telefono}</td>
-              <td>
-                <Link to={`/clientes/${c.id}/editar`}>Editar</Link>
-                {" | "}
-                <button onClick={() => handleDelete(c.id)}>Eliminar</button>
-              </td>
+      <div className="card">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>DNI</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {clientes.map((c) => (
+              <tr key={c.id}>
+                <td data-label="Cliente">
+                  <Link to={`/clientes/${c.id}`} className="client-list-card" style={{ textDecoration: "none", color: "inherit" }}>
+                    <div className="client-avatar">{iniciales(c.nombre, c.apellido)}</div>
+                    <span>{c.nombre} {c.apellido}</span>
+                  </Link>
+                </td>
+                <td data-label="DNI">{c.dni}</td>
+                <td data-label="Email">{c.email}</td>
+                <td data-label="Teléfono">{c.telefono}</td>
+                <td data-label="Acciones">
+                  <Link to={`/clientes/${c.id}/editar`} className="link-action">Editar</Link>
+                  {" · "}
+                  <button className="btn-danger-ghost" onClick={() => handleDelete(c.id)}>Eliminar</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      {clientes.length === 0 && <p>No hay clientes cargados todavía.</p>}
+        {clientes.length === 0 && <p className="empty-state">No hay clientes cargados todavía.</p>}
+      </div>
     </div>
   );
 }

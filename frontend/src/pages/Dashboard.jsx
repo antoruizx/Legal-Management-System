@@ -16,9 +16,9 @@ function getEstadoTarea(tarea) {
   const vencimiento = new Date(tarea.fechaVencimiento);
   const diffDias = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
 
-  if (diffDias < 0) return { label: "Urgente", clase: "badge-danger" };
-  if (diffDias <= 3) return { label: "Próxima", clase: "badge-warning" };
-  return { label: "Pendiente", clase: "badge-info" };
+  if (diffDias < 0) return { label: "Urgente", clase: "badge-danger", dot: "dot-danger" };
+  if (diffDias <= 3) return { label: "Próxima", clase: "badge-warning", dot: "dot-warning" };
+  return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
 }
 
 export default function Dashboard() {
@@ -56,15 +56,15 @@ export default function Dashboard() {
       ) : (
         <>
           <div style={{ display: "flex", gap: "16px", margin: "24px 0", flexWrap: "wrap" }}>
-            <div className="stat-card">
+            <div className="stat-card stat-card-blue">
               <div className="value">{clientesCount}</div>
               <div className="label">Clientes</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card stat-card-green">
               <div className="value">{expedientesCount}</div>
               <div className="label">Expedientes</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card stat-card-amber">
               <div className="value">{tareasCount}</div>
               <div className="label">Tareas</div>
             </div>
@@ -88,7 +88,10 @@ export default function Dashboard() {
                       <td data-label="Tarea">{t.titulo}</td>
                       <td data-label="Fecha">{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
                       <td data-label="Estado">
-                        <span className={`badge ${estado.clase}`}>{estado.label}</span>
+                        <span className={`badge ${estado.clase}`}>
+                          <span className={`badge-dot ${estado.dot}`}></span>
+                          {estado.label}
+                        </span>
                       </td>
                     </tr>
                   );

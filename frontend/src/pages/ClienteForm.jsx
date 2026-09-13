@@ -16,6 +16,7 @@ export default function ClienteForm() {
     telefono: "",
   });
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isEdit) {
@@ -38,6 +39,7 @@ export default function ClienteForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSaving(true);
 
     try {
       if (isEdit) {
@@ -45,47 +47,58 @@ export default function ClienteForm() {
       } else {
         await createCliente(form);
       }
-      navigate("/clientes");
+      navigate(isEdit ? `/clientes/${id}` : "/clientes");
     } catch (err) {
       setError("Error al guardar el cliente. Revisá los datos.");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div>
       <BackButton />
-      <h2>{isEdit ? "Editar Cliente" : "Nuevo Cliente"}</h2>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }}>
-        <div style={{ marginBottom: "10px" }}>
-          <label>Nombre</label>
-          <input name="nombre" value={form.nombre} onChange={handleChange} required style={{ width: "100%", padding: "8px" }} />
-        </div>
+      <div className="card form-card">
+        <h2 style={{ marginBottom: "4px" }}>{isEdit ? "Editar Cliente" : "Nuevo Cliente"}</h2>
+        <p className="detail-subtitle" style={{ marginBottom: "20px" }}>
+          {isEdit ? "Actualizá los datos de contacto del cliente." : "Completá los datos para dar de alta un nuevo cliente."}
+        </p>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label>Apellido</label>
-          <input name="apellido" value={form.apellido} onChange={handleChange} required style={{ width: "100%", padding: "8px" }} />
-        </div>
+        {error && <div className="login-error">{error}</div>}
 
-        <div style={{ marginBottom: "10px" }}>
-          <label>DNI</label>
-          <input name="dni" value={form.dni} onChange={handleChange} style={{ width: "100%", padding: "8px" }} />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <div className="form-field" style={{ flex: 1 }}>
+              <label>Nombre</label>
+              <input name="nombre" value={form.nombre} onChange={handleChange} required />
+            </div>
+            <div className="form-field" style={{ flex: 1 }}>
+              <label>Apellido</label>
+              <input name="apellido" value={form.apellido} onChange={handleChange} required />
+            </div>
+          </div>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label>Email</label>
-          <input type="email" name="email" value={form.email} onChange={handleChange} style={{ width: "100%", padding: "8px" }} />
-        </div>
+          <div className="form-field">
+            <label>DNI</label>
+            <input name="dni" value={form.dni} onChange={handleChange} />
+          </div>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label>Teléfono</label>
-          <input name="telefono" value={form.telefono} onChange={handleChange} style={{ width: "100%", padding: "8px" }} />
-        </div>
+          <div className="form-field">
+            <label>Email</label>
+            <input type="email" name="email" value={form.email} onChange={handleChange} />
+          </div>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+          <div className="form-field">
+            <label>Teléfono</label>
+            <input name="telefono" value={form.telefono} onChange={handleChange} />
+          </div>
 
-        <button type="submit">{isEdit ? "Guardar cambios" : "Crear cliente"}</button>
-      </form>
+          <button type="submit" className="btn btn-primary" disabled={saving} style={{ width: "100%", marginTop: "8px" }}>
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear cliente"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
