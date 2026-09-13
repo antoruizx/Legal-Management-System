@@ -1,5 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import Logo from "./Logo";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -21,7 +22,8 @@ export default function Navbar() {
         color: "white",
       }}
     >
-      <h3 style={{ margin: 0 }}>Legal Management System</h3>
+      <Logo />
+      
       <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
         <span>{user?.firstName} {user?.lastName} ({user?.role})</span>
         <button onClick={handleLogout}>Cerrar sesión</button>

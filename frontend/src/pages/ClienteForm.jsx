@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCliente, createCliente, updateCliente } from "../api/clientesApi";
+import BackButton from "../components/BackButton";
 
 export default function ClienteForm() {
   const { id } = useParams();
@@ -52,6 +53,7 @@ export default function ClienteForm() {
 
   return (
     <div>
+      <BackButton />
       <h2>{isEdit ? "Editar Cliente" : "Nuevo Cliente"}</h2>
 
       <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }}>

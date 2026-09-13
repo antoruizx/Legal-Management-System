@@ -9,6 +9,9 @@ import ClienteForm from "./pages/ClienteForm";
 import Expedientes from "./pages/Expedientes";
 import ExpedienteForm from "./pages/ExpedienteForm";
 import ExpedienteDetalle from "./pages/ExpedienteDetalle";
+import Tareas from "./pages/Tareas";
+import TareaForm from "./pages/TareaForm";
+import TareaDetalle from "./pages/TareaDetalle";
 
 function App() {
   return (
@@ -32,6 +35,10 @@ function App() {
             <Route path="/expedientes/nuevo" element={<ExpedienteForm />} />
             <Route path="/expedientes/:id/editar" element={<ExpedienteForm />} />
             <Route path="/expedientes/:id" element={<ExpedienteDetalle />} />
+            <Route path="/tareas" element={<Tareas />} />
+            <Route path="/tareas/nuevo" element={<TareaForm />} />
+            <Route path="/tareas/:id/editar" element={<TareaForm />} />
+            <Route path="/tareas/:id" element={<TareaDetalle />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getClientes, deleteCliente } from "../api/clientesApi";
+import BackButton from "../components/BackButton";
 
 export default function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -40,6 +41,7 @@ export default function Clientes() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <BackButton />
         <h2>Clientes</h2>
         <Link to="/clientes/nuevo">
           <button>+ Nuevo Cliente</button>

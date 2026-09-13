@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getExpedientes, deleteExpediente } from "../api/expedientesApi";
+import BackButton from "../components/BackButton";
 
 export default function Expedientes() {
   const [expedientes, setExpedientes] = useState([]);
@@ -40,6 +41,7 @@ export default function Expedientes() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <BackButton />
         <h2>Expedientes</h2>
         <Link to="/expedientes/nuevo">
           <button>+ Nuevo Expediente</button>

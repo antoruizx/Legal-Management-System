@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getExpediente, createExpediente, updateExpediente } from "../api/expedientesApi";
 import { getClientes } from "../api/clientesApi";
+import BackButton from "../components/BackButton";
 
 export default function ExpedienteForm() {
   const { id } = useParams();
@@ -56,8 +57,8 @@ export default function ExpedienteForm() {
 
   return (
     <div>
+      <BackButton />
       <h2>{isEdit ? "Editar Expediente" : "Nuevo Expediente"}</h2>
-
       <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }}>
         <div style={{ marginBottom: "10px" }}>
           <label>Número</label>
