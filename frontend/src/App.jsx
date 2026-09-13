@@ -12,9 +12,11 @@ import ExpedienteDetalle from "./pages/ExpedienteDetalle";
 import Tareas from "./pages/Tareas";
 import TareaForm from "./pages/TareaForm";
 import TareaDetalle from "./pages/TareaDetalle";
+import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
   return (
+        <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -45,6 +47,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 
