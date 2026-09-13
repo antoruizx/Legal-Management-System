@@ -32,6 +32,8 @@ public class ExpedientesController : ControllerBase
     {
         var expediente = await _context.Expedientes
             .Include(e => e.Cliente)
+            .Include(e => e.Movimientos)
+            .Include(e => e.Tareas)
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (expediente == null) return NotFound();

@@ -4,6 +4,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import MainLayout from "./layouts/MainLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Clientes from "./pages/Clientes";
+import ClienteForm from "./pages/ClienteForm";
+import Expedientes from "./pages/Expedientes";
+import ExpedienteForm from "./pages/ExpedienteForm";
+import ExpedienteDetalle from "./pages/ExpedienteDetalle";
 
 function App() {
   return (
@@ -20,6 +25,13 @@ function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/clientes" element={<Clientes />} />
+            <Route path="/clientes/nuevo" element={<ClienteForm />} />
+            <Route path="/clientes/:id/editar" element={<ClienteForm />} />
+            <Route path="/expedientes" element={<Expedientes />} />
+            <Route path="/expedientes/nuevo" element={<ExpedienteForm />} />
+            <Route path="/expedientes/:id/editar" element={<ExpedienteForm />} />
+            <Route path="/expedientes/:id" element={<ExpedienteDetalle />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
