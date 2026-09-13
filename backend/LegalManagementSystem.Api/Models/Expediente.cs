@@ -11,4 +11,8 @@ public class Expediente
     // Relación con Cliente
     public int ClienteId { get; set; }
     public Cliente? Cliente { get; set; }
+
+    public ICollection<Movimiento> Movimientos { get; set; } = new List<Movimiento>();
+    public ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
 }
+

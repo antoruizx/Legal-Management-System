@@ -13,4 +13,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Cliente> Clientes { get; set; }
     public DbSet<Expediente> Expedientes { get; set; }
+    public DbSet<Movimiento> Movimientos { get; set; }
+    public DbSet<Tarea> Tareas { get; set; }
 }
