@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getClientes } from "../api/clientesApi";
 import { getExpedientes } from "../api/expedientesApi";
@@ -23,6 +24,7 @@ function getEstadoTarea(tarea) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [clientesCount, setClientesCount] = useState(0);
   const [expedientesCount, setExpedientesCount] = useState(0);
   const [tareasCount, setTareasCount] = useState(0);
@@ -71,7 +73,10 @@ export default function Dashboard() {
           </div>
 
           <div className="card">
-            <h3 style={{ marginBottom: "12px" }}>Próximos vencimientos</h3>
+            <div className="page-header" style={{ marginBottom: "12px" }}>
+              <h3>Próximos vencimientos</h3>
+              <Link to="/tareas" className="link-action">Ver todas las tareas →</Link>
+            </div>
             <table className="data-table">
               <thead>
                 <tr>
@@ -84,8 +89,12 @@ export default function Dashboard() {
                 {proximasTareas.map((t) => {
                   const estado = getEstadoTarea(t);
                   return (
-                    <tr key={t.id}>
-                      <td data-label="Tarea">{t.titulo}</td>
+                    <tr key={t.id} className="clickable-row" onClick={() => navigate(`/tareas/${t.id}`)}>
+                      <td data-label="Tarea">
+                        <Link to={`/tareas/${t.id}`} style={{ color: "var(--text-hi)", fontWeight: 500 }} onClick={(e) => e.stopPropagation()}>
+                          {t.titulo}
+                        </Link>
+                      </td>
                       <td data-label="Fecha">{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
                       <td data-label="Estado">
                         <span className={`badge ${estado.clase}`}>

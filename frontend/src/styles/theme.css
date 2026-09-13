@@ -55,7 +55,9 @@ h1, h2, h3, h4 {
   letter-spacing: -0.01em;
 }
 
-a { color: var(--accent); }
+a {
+  text-decoration: none; /* elimina el subrayado */
+}
 
 .app-shell {
   display: flex;
@@ -474,6 +476,8 @@ a { color: var(--accent); }
 
 .data-table tr:hover td { background: var(--bg-elevated); }
 
+.data-table tr.clickable-row { cursor: pointer; }
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -883,4 +887,12 @@ a { color: var(--accent); }
     font-size: 12px;
     margin-right: 12px;
   }
+}
+
+.logo-circular {
+  width: 40px;        /* ajustá el tamaño */
+  height: 40px;       /* mismo valor para ancho y alto */
+  border-radius: 50%; /* lo hace circular */
+  object-fit: cover;  /* recorta bien la imagen */
+  margin-right: 8px;  /* espacio entre logo y texto */
 }

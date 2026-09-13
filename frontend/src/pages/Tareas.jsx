@@ -4,15 +4,15 @@ import { getTareas, updateTarea, deleteTarea } from "../api/tareasApi";
 import BackButton from "../components/BackButton";
 
 function getEstadoTarea(tarea) {
-  if (tarea.completada) return { label: "Completada", color: "#16a34a" };
+  if (tarea.completada) return { label: "Completada", clase: "badge-success", dot: "dot-success" };
 
   const hoy = new Date();
   const vencimiento = new Date(tarea.fechaVencimiento);
   const diffDias = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
 
-  if (diffDias < 0) return { label: "Vencida", color: "#dc2626" };
-  if (diffDias <= 3) return { label: "Próxima a vencer", color: "#d97706" };
-  return { label: "Pendiente", color: "#2563eb" };
+  if (diffDias < 0) return { label: "Vencida", clase: "badge-danger", dot: "dot-danger" };
+  if (diffDias <= 3) return { label: "Próxima a vencer", clase: "badge-warning", dot: "dot-warning" };
+  return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
 }
 
 export default function Tareas() {
@@ -57,7 +57,7 @@ export default function Tareas() {
   };
 
   if (loading) return <p>Cargando tareas...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error) return <p style={{ color: "var(--danger)" }}>{error}</p>;
 
   const tareasFiltradas = tareas.filter((t) => {
     const estado = getEstadoTarea(t).label;
@@ -73,90 +73,85 @@ export default function Tareas() {
 
   return (
     <div>
-      <BackButton />
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="page-header">
+        <BackButton />
         <h2>Tareas</h2>
         <Link to="/tareas/nuevo">
-          <button>+ Nueva Tarea</button>
+          <button className="btn btn-primary">+ Nueva Tarea</button>
         </Link>
       </div>
 
       {(vencidas > 0 || proximas > 0) && (
-        <div style={{ margin: "15px 0", padding: "10px", backgroundColor: "#fef3c7", borderRadius: "6px" }}>
-          {vencidas > 0 && <p style={{ margin: 0, color: "#dc2626" }}>⚠️ Tenés {vencidas} tarea(s) vencida(s)</p>}
-          {proximas > 0 && <p style={{ margin: 0, color: "#d97706" }}>⏰ Tenés {proximas} tarea(s) próxima(s) a vencer</p>}
+        <div className="alert-banner alert-warning">
+          {vencidas > 0 && <span>⚠️ Tenés {vencidas} tarea(s) vencida(s)</span>}
+          {proximas > 0 && <span>⏰ Tenés {proximas} tarea(s) próxima(s) a vencer</span>}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "10px", margin: "15px 0" }}>
+      <div className="filter-row">
         {["Todas", "Pendientes", "Vencidas", "Completadas"].map((f) => (
           <button
             key={f}
+            className={`filter-chip ${filtro === f ? "active" : ""}`}
             onClick={() => setFiltro(f)}
-            style={{
-              padding: "6px 12px",
-              backgroundColor: filtro === f ? "#1f2937" : "#e5e7eb",
-              color: filtro === f ? "white" : "#1f2937",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-            }}
           >
             {f}
           </button>
         ))}
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ textAlign: "left", borderBottom: "1px solid #ccc" }}>
-            <th>Título</th>
-            <th>Expediente</th>
-            <th>Responsable</th>
-            <th>Vencimiento</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tareasFiltradas.map((t) => {
-            const estado = getEstadoTarea(t);
-            return (
-              <tr key={t.id} style={{ borderBottom: "1px solid #eee" }}>
-                <td><Link to={`/tareas/${t.id}`}>{t.titulo}</Link></td>
-                <td>{t.expediente ? t.expediente.caratula : "-"}</td>
-                <td>{t.user ? `${t.user.firstName} ${t.user.lastName}` : "-"}</td>
-                <td>{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
-                <td>
-                  <span
-                    style={{
-                      backgroundColor: estado.color,
-                      color: "white",
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {estado.label}
-                  </span>
-                </td>
-                <td>
-                  <button onClick={() => handleToggleCompletada(t)}>
-                    {t.completada ? "Marcar pendiente" : "Marcar completada"}
-                  </button>
-                  {" | "}
-                  <Link to={`/tareas/${t.id}/editar`}>Editar</Link>
-                  {" | "}
-                  <button onClick={() => handleDelete(t.id)}>Eliminar</button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="card">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Expediente</th>
+              <th>Responsable</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tareasFiltradas.map((t) => {
+              const estado = getEstadoTarea(t);
+              return (
+                <tr key={t.id}>
+                  <td data-label="Título">
+                    <Link to={`/tareas/${t.id}`} style={{ color: "var(--text-hi)", fontWeight: 500 }}>{t.titulo}</Link>
+                  </td>
+                  <td data-label="Expediente">
+                    {t.expediente ? (
+                      <Link to={`/expedientes/${t.expediente.id}`} className="link-action" style={{ color: "var(--text-hi)" }}>
+                        {t.expediente.caratula}
+                      </Link>
+                    ) : "-"}
+                  </td>
+                  <td data-label="Responsable">{t.user ? `${t.user.firstName} ${t.user.lastName}` : "-"}</td>
+                  <td data-label="Vencimiento">{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
+                  <td data-label="Estado">
+                    <span className={`badge ${estado.clase}`}>
+                      <span className={`badge-dot ${estado.dot}`}></span>
+                      {estado.label}
+                    </span>
+                  </td>
+                  <td data-label="Acciones">
+                    <button className="link-action" onClick={() => handleToggleCompletada(t)}>
+                      {t.completada ? "Marcar pendiente" : "Marcar completada"}
+                    </button>
+                    {" · "}
+                    <Link to={`/tareas/${t.id}/editar`} className="link-action">Editar</Link>
+                    {" · "}
+                    <button className="btn-danger-ghost" onClick={() => handleDelete(t.id)}>Eliminar</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
-      {tareasFiltradas.length === 0 && <p>No hay tareas para este filtro.</p>}
+        {tareasFiltradas.length === 0 && <p className="empty-state">No hay tareas para este filtro.</p>}
+      </div>
     </div>
   );
 }
