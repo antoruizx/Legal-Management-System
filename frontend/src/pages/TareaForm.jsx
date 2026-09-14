@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getTarea, createTarea, updateTarea } from "../api/tareasApi";
 import { getExpedientes } from "../api/expedientesApi";
+import { useAuth } from "../context/AuthContext";
 import BackButton from "../components/BackButton";
 
 export default function TareaForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [expedientes, setExpedientes] = useState([]);
   const [form, setForm] = useState({
@@ -15,7 +17,7 @@ export default function TareaForm() {
     descripcion: "",
     fechaVencimiento: "",
     expedienteId: "",
-    userId: 1,
+    userId: user?.id || 1,
     completada: false,
   });
   const [error, setError] = useState("");
@@ -29,7 +31,7 @@ export default function TareaForm() {
           descripcion: response.data.descripcion || "",
           fechaVencimiento: response.data.fechaVencimiento ? response.data.fechaVencimiento.substring(0, 10) : "",
           expedienteId: response.data.expedienteId || "",
-          userId: response.data.userId || 1,
+          userId: response.data.userId || user?.id || 1,
           completada: response.data.completada || false,
         });
       });
@@ -46,7 +48,7 @@ export default function TareaForm() {
     const payload = {
       ...form,
       expedienteId: Number(form.expedienteId),
-      userId: Number(form.userId),
+      userId: Number(user?.id || 1),
       fechaVencimiento: new Date(form.fechaVencimiento).toISOString(),
     };
     try {
