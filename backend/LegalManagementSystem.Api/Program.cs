@@ -16,9 +16,24 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
 
-builder.Services.AddCors(options => { options.AddPolicy("AllowFrontend", policy => { policy.WithOrigins( "http://localhost:5173", "https://legalmsystem.netlify.app" ) .AllowAnyHeader() .AllowAnyMethod(); }); });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "https://legalmsystem.netlify.app"
+              )
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
+
+// Render (y otras plataformas cloud) asignan el puerto dinámicamente vía la variable PORT
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5160";
+app.Urls.Add($"http://0.0.0.0:{port}");
 
 if (app.Environment.IsDevelopment())
 {
