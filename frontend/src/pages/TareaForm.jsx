@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-motion";
 import { getTarea, createTarea, updateTarea } from "../api/tareasApi";
 import { getExpedientes } from "../api/expedientesApi";
 import BackButton from "../components/BackButton";
@@ -15,7 +15,7 @@ export default function TareaForm() {
     descripcion: "",
     fechaVencimiento: "",
     expedienteId: "",
-    userId: 1, // TODO: reemplazar por el usuario logueado cuando haya selección de responsable
+    userId: 1,
     completada: false,
   });
   const [error, setError] = useState("");
@@ -68,21 +68,21 @@ export default function TareaForm() {
 
   return (
     <div>
-    <BackButton />
-      <h2>{isEdit ? "Editar Tarea" : "Nueva Tarea"}</h2>
+      <BackButton />
+      <h2 style={{ marginBottom: "20px" }}>{isEdit ? "Editar Tarea" : "Nueva Tarea"}</h2>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }}>
-        <div style={{ marginBottom: "10px" }}>
+      <form onSubmit={handleSubmit} className="card form-card">
+        <div className="form-field">
           <label>Título</label>
-          <input name="titulo" value={form.titulo} onChange={handleChange} required style={{ width: "100%", padding: "8px" }} />
+          <input name="titulo" value={form.titulo} onChange={handleChange} required />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
+        <div className="form-field">
           <label>Descripción</label>
-          <textarea name="descripcion" value={form.descripcion} onChange={handleChange} style={{ width: "100%", padding: "8px" }} />
+          <textarea name="descripcion" value={form.descripcion} onChange={handleChange} rows={3} />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
+        <div className="form-field">
           <label>Fecha de vencimiento</label>
           <input
             type="date"
@@ -90,13 +90,12 @@ export default function TareaForm() {
             value={form.fechaVencimiento}
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px" }}
           />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
+        <div className="form-field">
           <label>Expediente</label>
-          <select name="expedienteId" value={form.expedienteId} onChange={handleChange} required style={{ width: "100%", padding: "8px" }}>
+          <select name="expedienteId" value={form.expedienteId} onChange={handleChange} required>
             <option value="">-- Seleccionar expediente --</option>
             {expedientes.map((e) => (
               <option key={e.id} value={e.id}>
@@ -106,9 +105,11 @@ export default function TareaForm() {
           </select>
         </div>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{error}</p>}
 
-        <button type="submit">{isEdit ? "Guardar cambios" : "Crear tarea"}</button>
+        <button type="submit" className="btn btn-primary">
+          {isEdit ? "Guardar cambios" : "Crear tarea"}
+        </button>
       </form>
     </div>
   );

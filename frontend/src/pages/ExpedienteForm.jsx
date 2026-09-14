@@ -1,39 +1,37 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getTarea, createTarea, updateTarea } from "../api/tareasApi";
-import { getExpedientes } from "../api/expedientesApi";
+import { getExpediente, createExpediente, updateExpediente } from "../api/expedientesApi";
+import { getClientes } from "../api/clientesApi";
 import BackButton from "../components/BackButton";
 
-export default function TareaForm() {
+export default function ExpedienteForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
 
-  const [expedientes, setExpedientes] = useState([]);
+  const [clientes, setClientes] = useState([]);
   const [form, setForm] = useState({
-    titulo: "",
-    descripcion: "",
-    fechaVencimiento: "",
-    expedienteId: "",
-    userId: 1, // TODO: reemplazar por el usuario logueado cuando haya selección de responsable
-    completada: false,
+    numero: "",
+    caratula: "",
+    estado: "Activo",
+    fechaInicio: "",
+    clienteId: "",
   });
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getExpedientes().then((response) => setExpedientes(response.data));
+    getClientes().then((response) => setClientes(response.data));
 
     if (isEdit) {
-      getTarea(id).then((response) => {
+      getExpediente(id).then((response) => {
         setForm({
-          titulo: response.data.titulo || "",
-          descripcion: response.data.descripcion || "",
-          fechaVencimiento: response.data.fechaVencimiento
-            ? response.data.fechaVencimiento.substring(0, 10)
+          numero: response.data.numero || "",
+          caratula: response.data.caratula || "",
+          estado: response.data.estado || "Activo",
+          fechaInicio: response.data.fechaInicio
+            ? response.data.fechaInicio.substring(0, 10)
             : "",
-          expedienteId: response.data.expedienteId || "",
-          userId: response.data.userId || 1,
-          completada: response.data.completada || false,
+          clienteId: response.data.clienteId || "",
         });
       });
     }
@@ -49,57 +47,66 @@ export default function TareaForm() {
 
     const payload = {
       ...form,
-      expedienteId: Number(form.expedienteId),
-      userId: Number(form.userId),
-      fechaVencimiento: new Date(form.fechaVencimiento).toISOString(),
+      clienteId: Number(form.clienteId),
+      fechaInicio: new Date(form.fechaInicio).toISOString(),
     };
 
     try {
       if (isEdit) {
-        await updateTarea(id, { id: Number(id), ...payload });
+        await updateExpediente(id, { id: Number(id), ...payload });
       } else {
-        await createTarea(payload);
+        await createExpediente(payload);
       }
-      navigate("/tareas");
+      navigate("/expedientes");
     } catch (err) {
-      setError("Error al guardar la tarea. Revisá los datos.");
+      setError("Error al guardar el expediente. Revisá los datos.");
     }
   };
 
   return (
     <div>
       <BackButton />
-      <h2 style={{ marginBottom: "20px" }}>{isEdit ? "Editar Tarea" : "Nueva Tarea"}</h2>
+      <h2 style={{ marginBottom: "20px" }}>{isEdit ? "Editar Expediente" : "Nuevo Expediente"}</h2>
 
       <form onSubmit={handleSubmit} className="card form-card">
         <div className="form-field">
-          <label>Título</label>
-          <input name="titulo" value={form.titulo} onChange={handleChange} required />
+          <label>Número</label>
+          <input name="numero" value={form.numero} onChange={handleChange} required />
         </div>
 
         <div className="form-field">
-          <label>Descripción</label>
-          <textarea name="descripcion" value={form.descripcion} onChange={handleChange} rows={3} />
+          <label>Carátula</label>
+          <input name="caratula" value={form.caratula} onChange={handleChange} required />
         </div>
 
         <div className="form-field">
-          <label>Fecha de vencimiento</label>
+          <label>Estado</label>
+          <select name="estado" value={form.estado} onChange={handleChange} required>
+            <option value="Activo">Activo</option>
+            <option value="En trámite">En trámite</option>
+            <option value="Cerrado">Cerrado</option>
+            <option value="Archivado">Archivado</option>
+          </select>
+        </div>
+
+        <div className="form-field">
+          <label>Fecha de inicio</label>
           <input
             type="date"
-            name="fechaVencimiento"
-            value={form.fechaVencimiento}
+            name="fechaInicio"
+            value={form.fechaInicio}
             onChange={handleChange}
             required
           />
         </div>
 
         <div className="form-field">
-          <label>Expediente</label>
-          <select name="expedienteId" value={form.expedienteId} onChange={handleChange} required>
-            <option value="">-- Seleccionar expediente --</option>
-            {expedientes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.numero} - {e.caratula}
+          <label>Cliente</label>
+          <select name="clienteId" value={form.clienteId} onChange={handleChange} required>
+            <option value="">-- Seleccionar cliente --</option>
+            {clientes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre} {c.apellido}
               </option>
             ))}
           </select>
@@ -108,7 +115,7 @@ export default function TareaForm() {
         {error && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{error}</p>}
 
         <button type="submit" className="btn btn-primary">
-          {isEdit ? "Guardar cambios" : "Crear tarea"}
+          {isEdit ? "Guardar cambios" : "Crear expediente"}
         </button>
       </form>
     </div>
