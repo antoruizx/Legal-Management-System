@@ -1,86 +1,116 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { getTarea } from "../api/tareasApi";
+import { useNavigate, useParams } from "react-router-dom";
+import { getTarea, createTarea, updateTarea } from "../api/tareasApi";
+import { getExpedientes } from "../api/expedientesApi";
 import BackButton from "../components/BackButton";
 
-function getEstadoTarea(tarea) {
-  if (tarea.completada) return { label: "Completada", clase: "badge-success", dot: "dot-success" };
-
-  const hoy = new Date();
-  const vencimiento = new Date(tarea.fechaVencimiento);
-  const diffDias = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
-
-  if (diffDias < 0) return { label: "Urgente", clase: "badge-danger", dot: "dot-danger" };
-  if (diffDias <= 3) return { label: "Próxima", clase: "badge-warning", dot: "dot-warning" };
-  return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
-}
-
-export default function TareaDetalle() {
+export default function TareaForm() {
   const { id } = useParams();
-  const [tarea, setTarea] = useState(null);
+  const isEdit = Boolean(id);
+  const navigate = useNavigate();
+
+  const [expedientes, setExpedientes] = useState([]);
+  const [form, setForm] = useState({
+    titulo: "",
+    descripcion: "",
+    fechaVencimiento: "",
+    expedienteId: "",
+    userId: 1, // TODO: reemplazar por el usuario logueado cuando haya selección de responsable
+    completada: false,
+  });
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getTarea(id)
-      .then((response) => setTarea(response.data))
-      .catch(() => setError("No se pudo cargar la tarea"));
-  }, [id]);
+    getExpedientes().then((response) => setExpedientes(response.data));
 
-  if (error) return <p style={{ color: "var(--danger)" }}>{error}</p>;
-  if (!tarea) return <p>Cargando...</p>;
+    if (isEdit) {
+      getTarea(id).then((response) => {
+        setForm({
+          titulo: response.data.titulo || "",
+          descripcion: response.data.descripcion || "",
+          fechaVencimiento: response.data.fechaVencimiento
+            ? response.data.fechaVencimiento.substring(0, 10)
+            : "",
+          expedienteId: response.data.expedienteId || "",
+          userId: response.data.userId || 1,
+          completada: response.data.completada || false,
+        });
+      });
+    }
+  }, [id, isEdit]);
 
-  const estado = getEstadoTarea(tarea);
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    const payload = {
+      ...form,
+      expedienteId: Number(form.expedienteId),
+      userId: Number(form.userId),
+      fechaVencimiento: new Date(form.fechaVencimiento).toISOString(),
+    };
+
+    try {
+      if (isEdit) {
+        await updateTarea(id, { id: Number(id), ...payload });
+      } else {
+        await createTarea(payload);
+      }
+      navigate("/tareas");
+    } catch (err) {
+      setError("Error al guardar la tarea. Revisá los datos.");
+    }
+  };
 
   return (
     <div>
       <BackButton />
+      <h2 style={{ marginBottom: "20px" }}>{isEdit ? "Editar Tarea" : "Nueva Tarea"}</h2>
 
-      <div className="detail-header">
-        <div>
-          <div className="detail-title-row">
-            <h2>{tarea.titulo}</h2>
-            <span className={`badge ${estado.clase}`}>
-              <span className={`badge-dot ${estado.dot}`}></span>
-              {estado.label}
-            </span>
-          </div>
-          <div className="detail-subtitle">
-            {tarea.expediente ? `Expediente ${tarea.expediente.numero} — ${tarea.expediente.caratula}` : "Sin expediente asociado"}
-          </div>
+      <form onSubmit={handleSubmit} className="card form-card">
+        <div className="form-field">
+          <label>Título</label>
+          <input name="titulo" value={form.titulo} onChange={handleChange} required />
         </div>
-      </div>
 
-      <div className="detail-grid">
-        <div className="detail-field">
-          <div className="detail-label">Vencimiento</div>
-          <div className="detail-value">{new Date(tarea.fechaVencimiento).toLocaleDateString()}</div>
+        <div className="form-field">
+          <label>Descripción</label>
+          <textarea name="descripcion" value={form.descripcion} onChange={handleChange} rows={3} />
         </div>
-        <div className="detail-field">
-          <div className="detail-label">Responsable</div>
-          <div className="detail-value">
-            {tarea.user ? `${tarea.user.firstName} ${tarea.user.lastName}` : "-"}
-          </div>
-        </div>
-        <div className="detail-field">
-          <div className="detail-label">Fecha de creación</div>
-          <div className="detail-value">{new Date(tarea.fechaCreacion).toLocaleDateString()}</div>
-        </div>
-        {tarea.expediente && (
-          <div className="detail-field">
-            <div className="detail-label">Expediente</div>
-            <div className="detail-value">
-              <Link to={`/expedientes/${tarea.expediente.id}`}>{tarea.expediente.numero}</Link>
-            </div>
-          </div>
-        )}
-      </div>
 
-      <div className="detail-section card">
-        <h3>Descripción</h3>
-        <p style={{ color: tarea.descripcion ? "var(--text-hi)" : "var(--text-lo)", fontSize: "14px" }}>
-          {tarea.descripcion || "Sin descripción."}
-        </p>
-      </div>
+        <div className="form-field">
+          <label>Fecha de vencimiento</label>
+          <input
+            type="date"
+            name="fechaVencimiento"
+            value={form.fechaVencimiento}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-field">
+          <label>Expediente</label>
+          <select name="expedienteId" value={form.expedienteId} onChange={handleChange} required>
+            <option value="">-- Seleccionar expediente --</option>
+            {expedientes.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.numero} - {e.caratula}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {error && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{error}</p>}
+
+        <button type="submit" className="btn btn-primary">
+          {isEdit ? "Guardar cambios" : "Crear tarea"}
+        </button>
+      </form>
     </div>
   );
 }

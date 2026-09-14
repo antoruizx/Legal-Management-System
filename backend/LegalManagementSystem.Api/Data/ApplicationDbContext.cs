@@ -15,4 +15,5 @@ public class ApplicationDbContext : DbContext
     public DbSet<Expediente> Expedientes { get; set; }
     public DbSet<Movimiento> Movimientos { get; set; }
     public DbSet<Tarea> Tareas { get; set; }
+    public DbSet<Documento> Documentos { get; set; }
 }

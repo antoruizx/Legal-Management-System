@@ -73,13 +73,15 @@ export default function Tareas() {
 
   return (
     <div>
-      <div className="page-header">
+          <div className="page-header">
+      <div>
         <BackButton />
         <h2>Tareas</h2>
-        <Link to="/tareas/nuevo">
-          <button className="btn btn-primary">+ Nueva Tarea</button>
-        </Link>
       </div>
+      <Link to="/tareas/nuevo">
+        <button className="btn btn-primary">+ Nueva Tarea</button>
+      </Link>
+    </div>
 
       {(vencidas > 0 || proximas > 0) && (
         <div className="alert-banner alert-warning">

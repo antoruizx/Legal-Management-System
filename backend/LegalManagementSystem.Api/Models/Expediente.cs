@@ -24,4 +24,6 @@ public class Expediente
 
     public ICollection<Movimiento> Movimientos { get; set; } = new List<Movimiento>();
     public ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
+
+    public ICollection<Documento> Documentos { get; set; } = new List<Documento>();
 }

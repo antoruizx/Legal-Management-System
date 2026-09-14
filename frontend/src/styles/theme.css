@@ -56,7 +56,7 @@ h1, h2, h3, h4 {
 }
 
 a {
-  text-decoration: none; /* elimina el subrayado */
+  text-decoration: none;
 }
 
 .app-shell {
@@ -890,9 +890,9 @@ a {
 }
 
 .logo-circular {
-  width: 40px;        /* ajustá el tamaño */
-  height: 40px;       /* mismo valor para ancho y alto */
-  border-radius: 50%; /* lo hace circular */
-  object-fit: cover;  /* recorta bien la imagen */
-  margin-right: 8px;  /* espacio entre logo y texto */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px;
 }

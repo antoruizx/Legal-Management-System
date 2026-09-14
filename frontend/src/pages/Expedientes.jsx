@@ -55,13 +55,15 @@ export default function Expedientes() {
 
   return (
     <div>
-      <div className="page-header">
+    <div className="page-header">
+      <div>
         <BackButton />
         <h2>Expedientes</h2>
-        <Link to="/expedientes/nuevo">
-          <button className="btn btn-primary">+ Nuevo Expediente</button>
-        </Link>
       </div>
+      <Link to="/expedientes/nuevo">
+        <button className="btn btn-primary">+ Nuevo Expediente</button>
+      </Link>
+    </div>
 
       <div className="card">
         <table className="data-table">

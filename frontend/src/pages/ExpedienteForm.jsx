@@ -1,33 +1,39 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getExpediente, createExpediente, updateExpediente } from "../api/expedientesApi";
-import { getClientes } from "../api/clientesApi";
+import { getTarea, createTarea, updateTarea } from "../api/tareasApi";
+import { getExpedientes } from "../api/expedientesApi";
 import BackButton from "../components/BackButton";
 
-export default function ExpedienteForm() {
+export default function TareaForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
 
-  const [clientes, setClientes] = useState([]);
+  const [expedientes, setExpedientes] = useState([]);
   const [form, setForm] = useState({
-    numero: "",
-    caratula: "",
-    estado: "Activo",
-    clienteId: "",
+    titulo: "",
+    descripcion: "",
+    fechaVencimiento: "",
+    expedienteId: "",
+    userId: 1, // TODO: reemplazar por el usuario logueado cuando haya selección de responsable
+    completada: false,
   });
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getClientes().then((response) => setClientes(response.data));
+    getExpedientes().then((response) => setExpedientes(response.data));
 
     if (isEdit) {
-      getExpediente(id).then((response) => {
+      getTarea(id).then((response) => {
         setForm({
-          numero: response.data.numero || "",
-          caratula: response.data.caratula || "",
-          estado: response.data.estado || "Activo",
-          clienteId: response.data.clienteId || "",
+          titulo: response.data.titulo || "",
+          descripcion: response.data.descripcion || "",
+          fechaVencimiento: response.data.fechaVencimiento
+            ? response.data.fechaVencimiento.substring(0, 10)
+            : "",
+          expedienteId: response.data.expedienteId || "",
+          userId: response.data.userId || 1,
+          completada: response.data.completada || false,
         });
       });
     }
@@ -41,60 +47,69 @@ export default function ExpedienteForm() {
     e.preventDefault();
     setError("");
 
-    const payload = { ...form, clienteId: Number(form.clienteId) };
+    const payload = {
+      ...form,
+      expedienteId: Number(form.expedienteId),
+      userId: Number(form.userId),
+      fechaVencimiento: new Date(form.fechaVencimiento).toISOString(),
+    };
 
     try {
       if (isEdit) {
-        await updateExpediente(id, { id: Number(id), ...payload });
+        await updateTarea(id, { id: Number(id), ...payload });
       } else {
-        await createExpediente(payload);
+        await createTarea(payload);
       }
-      navigate("/expedientes");
+      navigate("/tareas");
     } catch (err) {
-      setError("Error al guardar el expediente. Revisá los datos.");
+      setError("Error al guardar la tarea. Revisá los datos.");
     }
   };
 
   return (
     <div>
       <BackButton />
-      <h2>{isEdit ? "Editar Expediente" : "Nuevo Expediente"}</h2>
-      <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }}>
-        <div style={{ marginBottom: "10px" }}>
-          <label>Número</label>
-          <input name="numero" value={form.numero} onChange={handleChange} required style={{ width: "100%", padding: "8px" }} />
+      <h2 style={{ marginBottom: "20px" }}>{isEdit ? "Editar Tarea" : "Nueva Tarea"}</h2>
+
+      <form onSubmit={handleSubmit} className="card form-card">
+        <div className="form-field">
+          <label>Título</label>
+          <input name="titulo" value={form.titulo} onChange={handleChange} required />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label>Carátula</label>
-          <input name="caratula" value={form.caratula} onChange={handleChange} required style={{ width: "100%", padding: "8px" }} />
+        <div className="form-field">
+          <label>Descripción</label>
+          <textarea name="descripcion" value={form.descripcion} onChange={handleChange} rows={3} />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label>Estado</label>
-          <select name="estado" value={form.estado} onChange={handleChange} style={{ width: "100%", padding: "8px" }}>
-            <option value="Activo">Activo</option>
-            <option value="En trámite">En trámite</option>
-            <option value="Cerrado">Cerrado</option>
-            <option value="Archivado">Archivado</option>
-          </select>
+        <div className="form-field">
+          <label>Fecha de vencimiento</label>
+          <input
+            type="date"
+            name="fechaVencimiento"
+            value={form.fechaVencimiento}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label>Cliente</label>
-          <select name="clienteId" value={form.clienteId} onChange={handleChange} required style={{ width: "100%", padding: "8px" }}>
-            <option value="">-- Seleccionar cliente --</option>
-            {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre} {c.apellido}
+        <div className="form-field">
+          <label>Expediente</label>
+          <select name="expedienteId" value={form.expedienteId} onChange={handleChange} required>
+            <option value="">-- Seleccionar expediente --</option>
+            {expedientes.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.numero} - {e.caratula}
               </option>
             ))}
           </select>
         </div>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{error}</p>}
 
-        <button type="submit">{isEdit ? "Guardar cambios" : "Crear expediente"}</button>
+        <button type="submit" className="btn btn-primary">
+          {isEdit ? "Guardar cambios" : "Crear tarea"}
+        </button>
       </form>
     </div>
   );

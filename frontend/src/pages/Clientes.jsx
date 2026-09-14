@@ -45,12 +45,14 @@ export default function Clientes() {
   return (
     <div>
       <div className="page-header">
+      <div>
         <BackButton />
         <h2>Clientes</h2>
-        <Link to="/clientes/nuevo">
-          <button className="btn btn-primary">+ Nuevo Cliente</button>
-        </Link>
       </div>
+      <Link to="/clientes/nuevo">
+        <button className="btn btn-primary">+ Nuevo Cliente</button>
+      </Link>
+    </div>
 
       <div className="card">
         <table className="data-table">
