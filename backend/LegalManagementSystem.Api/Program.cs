@@ -45,6 +45,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 
 app.MapGet("/api", () => "Legal Management System API funcionando");
+app.MapGet("/api/version", () => "v2-cors-fix");
 
 app.MapControllers();
 
