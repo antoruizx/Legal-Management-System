@@ -19,16 +19,31 @@ public class TareasController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTareas()
     {
-        var tareas = await _context.Tareas.ToListAsync();
+        var tareas = await _context.Tareas
+            .Include(t => t.Expediente)
+            .Include(t => t.User)
+            .ToListAsync();
         return Ok(tareas);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTarea(int id)
     {
-        var tarea = await _context.Tareas.FindAsync(id);
+        var tarea = await _context.Tareas
+            .Include(t => t.Expediente)
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (tarea == null) return NotFound();
         return Ok(tarea);
+    }
+
+    [HttpGet("usuarios")]
+    public async Task<IActionResult> GetUsuarios()
+    {
+        var usuarios = await _context.Users
+            .Select(u => new { u.Id, u.FirstName, u.LastName, u.Email, u.Role })
+            .ToListAsync();
+        return Ok(usuarios);
     }
 
     [HttpPost]

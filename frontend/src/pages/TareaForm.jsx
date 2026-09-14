@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getTarea, createTarea, updateTarea } from "../api/tareasApi";
 import { getExpedientes } from "../api/expedientesApi";
 import { useAuth } from "../context/AuthContext";
+import axiosClient from "../api/axiosClient";
 import BackButton from "../components/BackButton";
 
 export default function TareaForm() {
@@ -12,18 +13,21 @@ export default function TareaForm() {
   const { user } = useAuth();
 
   const [expedientes, setExpedientes] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [form, setForm] = useState({
     titulo: "",
     descripcion: "",
     fechaVencimiento: "",
     expedienteId: "",
-    userId: user?.id || 1,
+    userId: user?.id || "",
     completada: false,
   });
   const [error, setError] = useState("");
 
   useEffect(() => {
     getExpedientes().then((response) => setExpedientes(response.data));
+    axiosClient.get("/Tareas/usuarios").then((response) => setUsuarios(response.data));
+
     if (isEdit) {
       getTarea(id).then((response) => {
         setForm({
@@ -31,7 +35,7 @@ export default function TareaForm() {
           descripcion: response.data.descripcion || "",
           fechaVencimiento: response.data.fechaVencimiento ? response.data.fechaVencimiento.substring(0, 10) : "",
           expedienteId: response.data.expedienteId || "",
-          userId: response.data.userId || user?.id || 1,
+          userId: response.data.userId || user?.id || "",
           completada: response.data.completada || false,
         });
       });
@@ -48,7 +52,7 @@ export default function TareaForm() {
     const payload = {
       ...form,
       expedienteId: Number(form.expedienteId),
-      userId: Number(user?.id || 1),
+      userId: Number(form.userId),
       fechaVencimiento: new Date(form.fechaVencimiento).toISOString(),
     };
     try {
@@ -86,6 +90,15 @@ export default function TareaForm() {
             <option value="">-- Seleccionar expediente --</option>
             {expedientes.map((e) => (
               <option key={e.id} value={e.id}>{e.numero} - {e.caratula}</option>
+            ))}
+          </select>
+        </div>
+        <div className="form-field">
+          <label>Responsable</label>
+          <select name="userId" value={form.userId} onChange={handleChange} required>
+            <option value="">-- Seleccionar responsable --</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
             ))}
           </select>
         </div>
