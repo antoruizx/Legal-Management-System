@@ -41,4 +41,15 @@ public class AuthController : ControllerBase
             role = user.Role
         });
     }
+
+        [HttpPost("register")]
+    public async Task<IActionResult> Register(User user)
+    {
+        var existe = await _context.Users.AnyAsync(u => u.Email == user.Email);
+        if (existe) return BadRequest("Ya existe un usuario con ese email");
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        return Ok(new { id = user.Id, email = user.Email });
+    }
 }
