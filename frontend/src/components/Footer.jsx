@@ -24,7 +24,7 @@ export default function Footer() {
               Desarrollo
             </div>
             <div style={{ fontSize: "12px", color: "var(--text-lo)" }}>
-              👩‍💻 Nadia Antonella Ruiz
+              Nadia Antonella Ruiz 👩‍💻
             </div>
           </div>
         </div>

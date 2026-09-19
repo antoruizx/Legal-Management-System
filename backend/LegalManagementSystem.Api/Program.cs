@@ -49,4 +49,14 @@ app.MapGet("/api/version", () => "v2-cors-fix");
 
 app.MapControllers();
 
+// TEMPORAL: endpoint de diagnóstico para ver qué tablas existen realmente.
+// Borrar esta ruta una vez resuelto el problema.
+app.MapGet("/api/debug-tables", async (ApplicationDbContext db) =>
+{
+    var tablas = await db.Database
+        .SqlQueryRaw<string>("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+        .ToListAsync();
+    return Results.Ok(tablas);
+});
+
 app.Run();
