@@ -28,8 +28,12 @@ public class User
     [MaxLength(30)]
     public string? Telefono { get; set; }
 
-    // Puede ser una URL (avatar generado) o una imagen en base64 (foto subida)
     public string? AvatarUrl { get; set; }
 
+    public bool PuedeEditarClientes { get; set; } = false;
+    public bool PuedeEliminarClientes { get; set; } = false;
     public bool PuedeEditarExpedientes { get; set; } = false;
+    public bool PuedeEliminarExpedientes { get; set; } = false;
+    public bool PuedeEditarTareas { get; set; } = false;
+    public bool PuedeEliminarTareas { get; set; } = false;
 }

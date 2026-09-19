@@ -2,12 +2,18 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getClientes, deleteCliente } from "../api/clientesApi";
 import BackButton from "../components/BackButton";
+import { useAuth } from "../context/AuthContext";
 
 function iniciales(nombre, apellido) {
   return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
 }
 
 export default function Clientes() {
+  const { user } = useAuth();
+  const esAdmin = user?.role === "Admin";
+  const puedeEditar = esAdmin || user?.puedeEditarClientes === true;
+  const puedeEliminar = esAdmin || user?.puedeEliminarClientes === true;
+
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -45,14 +51,16 @@ export default function Clientes() {
   return (
     <div>
       <div className="page-header">
-      <div>
-        <BackButton />
-        <h2>Clientes</h2>
+        <div>
+          <BackButton />
+          <h2>Clientes</h2>
+        </div>
+        {puedeEditar && (
+          <Link to="/clientes/nuevo">
+            <button className="btn btn-primary">+ Nuevo Cliente</button>
+          </Link>
+        )}
       </div>
-      <Link to="/clientes/nuevo">
-        <button className="btn btn-primary">+ Nuevo Cliente</button>
-      </Link>
-    </div>
 
       <div className="card">
         <table className="data-table">
@@ -62,7 +70,7 @@ export default function Clientes() {
               <th>DNI</th>
               <th>Email</th>
               <th>Teléfono</th>
-              <th>Acciones</th>
+              {(puedeEditar || puedeEliminar) && <th>Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -77,11 +85,17 @@ export default function Clientes() {
                 <td data-label="DNI">{c.dni}</td>
                 <td data-label="Email">{c.email}</td>
                 <td data-label="Teléfono">{c.telefono}</td>
-                <td data-label="Acciones">
-                  <Link to={`/clientes/${c.id}/editar`} className="link-action">Editar</Link>
-                  {" · "}
-                  <button className="btn-danger-ghost" onClick={() => handleDelete(c.id)}>Eliminar</button>
-                </td>
+                {(puedeEditar || puedeEliminar) && (
+                  <td data-label="Acciones">
+                    {puedeEditar && (
+                      <Link to={`/clientes/${c.id}/editar`} className="link-action">Editar</Link>
+                    )}
+                    {puedeEditar && puedeEliminar && " · "}
+                    {puedeEliminar && (
+                      <button className="btn-danger-ghost" onClick={() => handleDelete(c.id)}>Eliminar</button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

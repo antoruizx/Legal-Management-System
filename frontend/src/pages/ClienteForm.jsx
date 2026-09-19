@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { getCliente, createCliente, updateCliente } from "../api/clientesApi";
 import BackButton from "../components/BackButton";
+import { useAuth } from "../context/AuthContext";
 
 export default function ClienteForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const puedeEditar = user?.role === "Admin" || user?.puedeEditarClientes === true;
 
   const [form, setForm] = useState({
     nombre: "",
@@ -31,6 +35,10 @@ export default function ClienteForm() {
       });
     }
   }, [id, isEdit]);
+
+  if (!puedeEditar) {
+    return <Navigate to="/clientes" replace />;
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

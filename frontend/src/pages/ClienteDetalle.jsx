@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { getCliente } from "../api/clientesApi";
 import { getExpedientes } from "../api/expedientesApi";
 import BackButton from "../components/BackButton";
+import { useAuth } from "../context/AuthContext";
 
 function iniciales(nombre, apellido) {
   return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
@@ -25,6 +26,9 @@ function getEstadoBadge(estado) {
 
 export default function ClienteDetalle() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const puedeEditar = user?.role === "Admin" || user?.puedeEditarClientes === true;
+
   const [cliente, setCliente] = useState(null);
   const [expedientes, setExpedientes] = useState([]);
   const [error, setError] = useState("");
@@ -62,9 +66,11 @@ export default function ClienteDetalle() {
             <div className="detail-subtitle">Cliente desde {cliente.fechaCreacion ? new Date(cliente.fechaCreacion).toLocaleDateString() : "-"}</div>
           </div>
         </div>
-        <Link to={`/clientes/${cliente.id}/editar`}>
-          <button className="btn">Editar cliente</button>
-        </Link>
+        {puedeEditar && (
+          <Link to={`/clientes/${cliente.id}/editar`}>
+            <button className="btn">Editar cliente</button>
+          </Link>
+        )}
       </div>
 
       <div className="detail-grid">
