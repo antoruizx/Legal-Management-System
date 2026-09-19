@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getExpediente } from "../api/expedientesApi";
+import { getExpediente, updateExpediente } from "../api/expedientesApi";
 import {
   getDocumentosPorExpediente,
   subirDocumento,
@@ -9,6 +9,8 @@ import {
 } from "../api/documentosApi";
 import BackButton from "../components/BackButton";
 import { useAuth } from "../context/AuthContext";
+
+const ESTADOS = ["Activo", "En trámite", "Cerrado", "Archivado"];
 
 function getEstadoBadge(estado) {
   switch (estado) {
@@ -28,10 +30,13 @@ function getEstadoBadge(estado) {
 export default function ExpedienteDetalle() {
   const { id } = useParams();
   const { user } = useAuth();
-  const puedeEditar = user?.role === "Admin" || user?.puedeEditarExpedientes === true;
+  const esAdmin = user?.role === "Admin";
+  const puedeEditar = esAdmin || user?.puedeEditarExpedientes === true;
+  const puedeEliminar = esAdmin || user?.puedeEliminarExpedientes === true;
 
   const [expediente, setExpediente] = useState(null);
   const [error, setError] = useState("");
+  const [cambiandoEstado, setCambiandoEstado] = useState(false);
 
   const [documentos, setDocumentos] = useState([]);
   const [archivo, setArchivo] = useState(null);
@@ -53,6 +58,22 @@ export default function ExpedienteDetalle() {
     cargarExpediente();
     cargarDocumentos();
   }, [id]);
+
+  // Cambiar el estado es una acción permitida para todos los usuarios,
+  // independientemente de los permisos de edición/eliminación.
+  const handleCambiarEstado = async (nuevoEstado) => {
+    if (!expediente || nuevoEstado === expediente.estado) return;
+    setCambiandoEstado(true);
+    try {
+      const payload = { ...expediente, estado: nuevoEstado };
+      await updateExpediente(id, payload);
+      setExpediente(payload);
+    } catch (err) {
+      alert("No se pudo actualizar el estado del expediente");
+    } finally {
+      setCambiandoEstado(false);
+    }
+  };
 
   const handleSubirDocumento = async (e) => {
     e.preventDefault();
@@ -102,6 +123,25 @@ export default function ExpedienteDetalle() {
             </span>
           </div>
           <div className="detail-subtitle">Expediente N.º {expediente.numero}</div>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <select
+            value={expediente.estado}
+            onChange={(e) => handleCambiarEstado(e.target.value)}
+            disabled={cambiandoEstado}
+            title="Cambiar estado"
+          >
+            {ESTADOS.map((estado) => (
+              <option key={estado} value={estado}>{estado}</option>
+            ))}
+          </select>
+
+          {puedeEditar && (
+            <Link to={`/expedientes/${expediente.id}/editar`}>
+              <button className="btn">Editar expediente</button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -216,7 +256,7 @@ export default function ExpedienteDetalle() {
                 <a href={descargarDocumentoUrl(d.id)} target="_blank" rel="noreferrer" className="link-action">
                   Descargar
                 </a>
-                {puedeEditar && (
+                {puedeEliminar && (
                   <button className="btn-danger-ghost" onClick={() => handleEliminarDocumento(d.id)}>
                     Eliminar
                   </button>

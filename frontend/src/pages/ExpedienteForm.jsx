@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { getExpediente, createExpediente, updateExpediente } from "../api/expedientesApi";
 import { getClientes } from "../api/clientesApi";
 import BackButton from "../components/BackButton";
+import { useAuth } from "../context/AuthContext";
 
 export default function ExpedienteForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const puedeEditar = user?.role === "Admin" || user?.puedeEditarExpedientes === true;
 
   const [clientes, setClientes] = useState([]);
   const [form, setForm] = useState({
@@ -33,6 +37,10 @@ export default function ExpedienteForm() {
       });
     }
   }, [id, isEdit]);
+
+  if (!puedeEditar) {
+    return <Navigate to="/expedientes" replace />;
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

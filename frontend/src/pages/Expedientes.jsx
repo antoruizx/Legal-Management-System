@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getExpedientes, deleteExpediente } from "../api/expedientesApi";
 import BackButton from "../components/BackButton";
+import { useAuth } from "../context/AuthContext";
 
 function getEstadoBadge(estado) {
   switch (estado) {
@@ -19,6 +20,11 @@ function getEstadoBadge(estado) {
 }
 
 export default function Expedientes() {
+  const { user } = useAuth();
+  const esAdmin = user?.role === "Admin";
+  const puedeEditar = esAdmin || user?.puedeEditarExpedientes === true;
+  const puedeEliminar = esAdmin || user?.puedeEliminarExpedientes === true;
+
   const [expedientes, setExpedientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,9 +66,11 @@ export default function Expedientes() {
         <BackButton />
         <h2>Expedientes</h2>
       </div>
-      <Link to="/expedientes/nuevo">
-        <button className="btn btn-primary">+ Nuevo Expediente</button>
-      </Link>
+      {puedeEditar && (
+        <Link to="/expedientes/nuevo">
+          <button className="btn btn-primary">+ Nuevo Expediente</button>
+        </Link>
+      )}
     </div>
 
       <div className="card">
@@ -73,7 +81,7 @@ export default function Expedientes() {
               <th>Carátula</th>
               <th>Estado</th>
               <th>Cliente</th>
-              <th>Acciones</th>
+              {(puedeEditar || puedeEliminar) && <th>Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -100,11 +108,17 @@ export default function Expedientes() {
                       </Link>
                     ) : "-"}
                   </td>
-                  <td data-label="Acciones">
-                    <Link to={`/expedientes/${e.id}/editar`} className="link-action">Editar</Link>
-                    {" · "}
-                    <button className="btn-danger-ghost" onClick={() => handleDelete(e.id)}>Eliminar</button>
-                  </td>
+                  {(puedeEditar || puedeEliminar) && (
+                    <td data-label="Acciones">
+                      {puedeEditar && (
+                        <Link to={`/expedientes/${e.id}/editar`} className="link-action">Editar</Link>
+                      )}
+                      {puedeEditar && puedeEliminar && " · "}
+                      {puedeEliminar && (
+                        <button className="btn-danger-ghost" onClick={() => handleDelete(e.id)}>Eliminar</button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}
