@@ -99,7 +99,7 @@ export default function ConfiguracionUsuarios() {
           <form onSubmit={handleCrearUsuario}>
             {errorForm && <div className="login-error">{errorForm}</div>}
             <div style={{ display: "flex", gap: "12px" }}>
-              <div className="form-field" style={{ flex: 1 }}>
+              <div className="form-field" style={{ flex: 1, minWidth: 0 }}>
                 <label>Nombre</label>
                 <input
                   value={nuevo.firstName}
@@ -107,7 +107,7 @@ export default function ConfiguracionUsuarios() {
                   required
                 />
               </div>
-              <div className="form-field" style={{ flex: 1 }}>
+              <div className="form-field" style={{ flex: 1, minWidth: 0 }}>
                 <label>Apellido</label>
                 <input
                   value={nuevo.lastName}

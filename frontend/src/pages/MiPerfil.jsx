@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { updateUser } from "../api/usersApi";
+import { getUser, updateUser } from "../api/usersApi";
 import BackButton from "../components/BackButton";
 
 function iniciales(nombre, apellido) {
@@ -12,24 +12,37 @@ function generarSemillas(cantidad = 10) {
 }
 
 function avatarUrlDeSemilla(semilla) {
-  return `https://api.dicebear.com/9.x/avataaars/svg?seed=${semilla}`;
+  return `https://api.dicebear.com/9.x/notionists/svg?seed=${semilla}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 }
 
 export default function MiPerfil() {
   const { user, login } = useAuth();
 
-  const [form, setForm] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
-    telefono: user?.telefono || "",
-  });
-
-  const [avatarActual, setAvatarActual] = useState(user?.avatarUrl || null);
+  const [usuarioCompleto, setUsuarioCompleto] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", telefono: "" });
+  const [avatarActual, setAvatarActual] = useState(null);
   const [semillas, setSemillas] = useState(() => generarSemillas());
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+
+  useEffect(() => {
+    if (!user?.id) return;
+    getUser(user.id)
+      .then((res) => {
+        setUsuarioCompleto(res.data);
+        setForm({
+          firstName: res.data.firstName || "",
+          lastName: res.data.lastName || "",
+          email: res.data.email || "",
+          telefono: res.data.telefono || "",
+        });
+        setAvatarActual(res.data.avatarUrl || null);
+      })
+      .catch(() => setError("No se pudo cargar tu perfil."))
+      .finally(() => setCargando(false));
+  }, [user?.id]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -45,27 +58,37 @@ export default function MiPerfil() {
 
   const handleGuardar = async (e) => {
     e.preventDefault();
+    if (!usuarioCompleto) return;
+
     setGuardando(true);
     setError("");
     setMensaje("");
     try {
       const payload = {
-        ...user,
+        ...usuarioCompleto,
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
         telefono: form.telefono,
         avatarUrl: avatarActual,
       };
-      await updateUser(user.id, payload);
-      login(payload);
+      await updateUser(usuarioCompleto.id, payload);
+
+      // Guardamos en el contexto/localStorage sin la contraseña, por seguridad
+      const { password, ...userSinPassword } = payload;
+      login(userSinPassword);
+      setUsuarioCompleto(payload);
       setMensaje("Perfil actualizado correctamente.");
     } catch (err) {
+      console.error("Error al guardar perfil:", err.response?.data || err);
       setError("No se pudo guardar el perfil.");
     } finally {
       setGuardando(false);
     }
   };
+
+  if (cargando) return <p>Cargando perfil...</p>;
+  if (error && !usuarioCompleto) return <p style={{ color: "var(--danger)" }}>{error}</p>;
 
   return (
     <div>
@@ -76,7 +99,11 @@ export default function MiPerfil() {
       </div>
 
       {error && <div className="login-error">{error}</div>}
-      {mensaje && <div className="login-error" style={{ background: "var(--success-bg, #16532033)", color: "var(--success, #22c55e)" }}>{mensaje}</div>}
+      {mensaje && (
+        <div className="login-error" style={{ background: "var(--success-bg, #16532033)", color: "var(--success, #22c55e)" }}>
+          {mensaje}
+        </div>
+      )}
 
       <div className="card form-card">
         <h3>Foto de perfil</h3>
@@ -164,11 +191,11 @@ export default function MiPerfil() {
         <h3>Datos personales</h3>
         <form onSubmit={handleGuardar}>
           <div style={{ display: "flex", gap: "12px" }}>
-            <div className="form-field" style={{ flex: 1 }}>
+            <div className="form-field" style={{ flex: 1, minWidth: 0 }}>
               <label>Nombre</label>
               <input name="firstName" value={form.firstName} onChange={handleChange} required />
             </div>
-            <div className="form-field" style={{ flex: 1 }}>
+            <div className="form-field" style={{ flex: 1, minWidth: 0 }}>
               <label>Apellido</label>
               <input name="lastName" value={form.lastName} onChange={handleChange} required />
             </div>
