@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { getUsers, updateUser, createUser } from "../api/usersApi";
 import BackButton from "../components/BackButton";
+import { useAuth } from "../context/AuthContext";
 
 function iniciales(nombre, apellido) {
   return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
@@ -9,6 +11,8 @@ function iniciales(nombre, apellido) {
 const ROLES_ASIGNABLES = ["Abogado", "Asistente"];
 
 export default function ConfiguracionUsuarios() {
+  const { user } = useAuth();
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -33,8 +37,14 @@ export default function ConfiguracionUsuarios() {
   };
 
   useEffect(() => {
-    cargarUsers();
-  }, []);
+    if (user?.role === "Admin") {
+      cargarUsers();
+    }
+  }, [user]);
+
+  if (user?.role !== "Admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleTogglePermiso = async (u) => {
     setGuardandoId(u.id);
