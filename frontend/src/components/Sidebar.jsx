@@ -11,9 +11,6 @@ export default function Sidebar({ open, onClose }) {
         <NavLink to="/clientes" className={linkClass} onClick={onClose}>Clientes</NavLink>
         <NavLink to="/expedientes" className={linkClass} onClick={onClose}>Expedientes</NavLink>
         <NavLink to="/tareas" className={linkClass} onClick={onClose}>Tareas</NavLink>
-
-        <hr className="sidebar-divider" />
-        <NavLink to="/usuarios" className={linkClass} onClick={onClose}>Usuarios</NavLink>
       </div>
     </>
   );

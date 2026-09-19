@@ -8,6 +8,7 @@ import {
   eliminarDocumento,
 } from "../api/documentosApi";
 import BackButton from "../components/BackButton";
+import { useAuth } from "../context/AuthContext";
 
 function getEstadoBadge(estado) {
   switch (estado) {
@@ -26,6 +27,9 @@ function getEstadoBadge(estado) {
 
 export default function ExpedienteDetalle() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const puedeEditar = user?.role === "Admin" || user?.puedeEditarExpedientes === true;
+
   const [expediente, setExpediente] = useState(null);
   const [error, setError] = useState("");
 
@@ -162,35 +166,39 @@ export default function ExpedienteDetalle() {
       </div>
 
       <div className="detail-section card">
-        <h3>📎 Documentos</h3>
+        <h3>
+          📎 Documentos {!puedeEditar && <span className="badge badge-neutral" style={{ marginLeft: 8 }}>Solo lectura</span>}
+        </h3>
 
-        <form onSubmit={handleSubirDocumento} style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
-          <input
-            type="file"
-            onChange={(e) => setArchivo(e.target.files[0])}
-            required
-            style={{ color: "var(--text-hi)", fontSize: "13px" }}
-          />
-          <input
-            type="text"
-            placeholder="Descripción (opcional)"
-            value={descripcionDoc}
-            onChange={(e) => setDescripcionDoc(e.target.value)}
-            style={{
-              background: "var(--bg-elevated)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: "var(--radius-sm)",
-              padding: "8px 12px",
-              color: "var(--text-hi)",
-              fontSize: "13px",
-              flex: 1,
-              minWidth: "160px",
-            }}
-          />
-          <button type="submit" className="btn btn-primary" disabled={subiendo}>
-            {subiendo ? "Subiendo..." : "Subir documento"}
-          </button>
-        </form>
+        {puedeEditar && (
+          <form onSubmit={handleSubirDocumento} style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
+            <input
+              type="file"
+              onChange={(e) => setArchivo(e.target.files[0])}
+              required
+              style={{ color: "var(--text-hi)", fontSize: "13px" }}
+            />
+            <input
+              type="text"
+              placeholder="Descripción (opcional)"
+              value={descripcionDoc}
+              onChange={(e) => setDescripcionDoc(e.target.value)}
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-sm)",
+                padding: "8px 12px",
+                color: "var(--text-hi)",
+                fontSize: "13px",
+                flex: 1,
+                minWidth: "160px",
+              }}
+            />
+            <button type="submit" className="btn btn-primary" disabled={subiendo}>
+              {subiendo ? "Subiendo..." : "Subir documento"}
+            </button>
+          </form>
+        )}
 
         {errorDoc && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{errorDoc}</p>}
 
@@ -208,9 +216,11 @@ export default function ExpedienteDetalle() {
                 <a href={descargarDocumentoUrl(d.id)} target="_blank" rel="noreferrer" className="link-action">
                   Descargar
                 </a>
-                <button className="btn-danger-ghost" onClick={() => handleEliminarDocumento(d.id)}>
-                  Eliminar
-                </button>
+                {puedeEditar && (
+                  <button className="btn-danger-ghost" onClick={() => handleEliminarDocumento(d.id)}>
+                    Eliminar
+                  </button>
+                )}
               </div>
             </div>
           ))

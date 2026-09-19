@@ -24,4 +24,12 @@ public class User
 
     [Required(ErrorMessage = "El rol es obligatorio")]
     public string Role { get; set; } = string.Empty;
+
+    [MaxLength(30)]
+    public string? Telefono { get; set; }
+
+    // Puede ser una URL (avatar generado) o una imagen en base64 (foto subida)
+    public string? AvatarUrl { get; set; }
+
+    public bool PuedeEditarExpedientes { get; set; } = false;
 }

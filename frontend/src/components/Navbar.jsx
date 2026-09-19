@@ -7,6 +7,10 @@ import { getClientes } from "../api/clientesApi";
 import { getExpedientes } from "../api/expedientesApi";
 import { getTareas } from "../api/tareasApi";
 
+function iniciales(nombre, apellido) {
+  return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
+}
+
 export default function Navbar({ onToggleSidebar }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -58,6 +62,16 @@ export default function Navbar({ onToggleSidebar }) {
     navigate("/login");
   };
 
+  const irAPerfil = () => {
+    setMenuAbierto(false);
+    navigate("/mi-perfil");
+  };
+
+  const irAConfiguracionUsuarios = () => {
+    setMenuAbierto(false);
+    navigate("/configuracion-usuarios");
+  };
+
   const q = query.trim().toLowerCase();
 
   const clientesMatch = q.length >= 2
@@ -85,6 +99,8 @@ export default function Navbar({ onToggleSidebar }) {
     setQuery("");
     setDropdownOpen(false);
   };
+
+  const esAdmin = user?.role === "Admin";
 
   return (
     <div className="navbar">
@@ -164,7 +180,22 @@ export default function Navbar({ onToggleSidebar }) {
         <NotificationBell />
 
         <div style={{ position: "relative" }}>
-          <button className="user-menu-btn" onClick={() => setMenuAbierto(!menuAbierto)}>
+          <button
+            className="user-menu-btn"
+            onClick={() => setMenuAbierto(!menuAbierto)}
+            style={{ display: "flex", alignItems: "center", gap: 8 }}
+          >
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt=""
+                style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
+              />
+            ) : (
+              <span className="client-avatar" style={{ width: 28, height: 28, fontSize: 12 }}>
+                {iniciales(user?.firstName, user?.lastName)}
+              </span>
+            )}
             {user?.firstName} ▾
           </button>
 
@@ -175,6 +206,10 @@ export default function Navbar({ onToggleSidebar }) {
                 <br />
                 <small>{user?.role}</small>
               </div>
+              <button onClick={irAPerfil}>Mi perfil</button>
+              {esAdmin && (
+                <button onClick={irAConfiguracionUsuarios}>Configuración de usuarios</button>
+              )}
               <button onClick={handleLogout}>Cerrar sesión</button>
             </div>
           )}
