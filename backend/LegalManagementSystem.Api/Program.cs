@@ -34,6 +34,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Aplica automáticamente las migraciones pendientes contra la base de datos
+// configurada (local o la de Render, según el entorno) al arrancar la app.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
+
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5160";
 app.Urls.Add($"http://0.0.0.0:{port}");
 

@@ -10,6 +10,12 @@ function iniciales(nombre, apellido) {
 
 const ROLES_ASIGNABLES = ["Abogado", "Asistente"];
 
+const MODULOS_PERMISOS = [
+  { label: "Clientes", editar: "puedeEditarClientes", eliminar: "puedeEliminarClientes" },
+  { label: "Expedientes", editar: "puedeEditarExpedientes", eliminar: "puedeEliminarExpedientes" },
+  { label: "Tareas", editar: "puedeEditarTareas", eliminar: "puedeEliminarTareas" },
+];
+
 export default function ConfiguracionUsuarios() {
   const { user } = useAuth();
 
@@ -46,10 +52,10 @@ export default function ConfiguracionUsuarios() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleTogglePermiso = async (u) => {
+  const handleTogglePermiso = async (u, campo) => {
     setGuardandoId(u.id);
     try {
-      const payload = { ...u, puedeEditarExpedientes: !u.puedeEditarExpedientes };
+      const payload = { ...u, [campo]: !u[campo] };
       await updateUser(u.id, payload);
       setUsers((prev) => prev.map((x) => (x.id === u.id ? payload : x)));
     } catch (err) {
@@ -64,7 +70,15 @@ export default function ConfiguracionUsuarios() {
     setCreando(true);
     setErrorForm("");
     try {
-      await createUser({ ...nuevo, puedeEditarExpedientes: false });
+      await createUser({
+        ...nuevo,
+        puedeEditarClientes: false,
+        puedeEliminarClientes: false,
+        puedeEditarExpedientes: false,
+        puedeEliminarExpedientes: false,
+        puedeEditarTareas: false,
+        puedeEliminarTareas: false,
+      });
       setNuevo({ firstName: "", lastName: "", email: "", password: "", role: ROLES_ASIGNABLES[0] });
       setMostrarForm(false);
       cargarUsers();
@@ -86,8 +100,8 @@ export default function ConfiguracionUsuarios() {
       </div>
 
       <p style={{ color: "var(--text-lo)", fontSize: 13, marginBottom: 16 }}>
-        Por el momento hay un solo administrador. Desde acá podés definir qué usuarios pueden editar o
-        eliminar expedientes; el resto solo tiene acceso de lectura.
+        Por el momento hay un solo administrador. Desde acá podés definir, módulo por módulo, quién puede
+        editar y quién puede eliminar. Marcar el estado de expedientes y tareas está siempre permitido para todos.
       </p>
 
       <div className="card" style={{ marginBottom: 16 }}>
@@ -157,9 +171,10 @@ export default function ConfiguracionUsuarios() {
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Email</th>
               <th>Rol</th>
-              <th>Puede editar/eliminar expedientes</th>
+              <th>Clientes</th>
+              <th>Expedientes</th>
+              <th>Tareas</th>
             </tr>
           </thead>
           <tbody>
@@ -168,24 +183,39 @@ export default function ConfiguracionUsuarios() {
                 <td data-label="Usuario">
                   <div className="client-list-card">
                     <div className="client-avatar">{iniciales(u.firstName, u.lastName)}</div>
-                    <span>{u.firstName} {u.lastName}</span>
+                    <div>
+                      <div>{u.firstName} {u.lastName}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-lo)" }}>{u.email}</div>
+                    </div>
                   </div>
                 </td>
-                <td data-label="Email">{u.email}</td>
                 <td data-label="Rol">
                   <span className="badge badge-info">{u.role}</span>
                 </td>
-                <td data-label="Permiso">
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={!!u.puedeEditarExpedientes}
-                      disabled={guardandoId === u.id}
-                      onChange={() => handleTogglePermiso(u)}
-                    />
-                    {u.puedeEditarExpedientes ? "Lectura y escritura" : "Solo lectura"}
-                  </label>
-                </td>
+                {MODULOS_PERMISOS.map(({ editar, eliminar }) => (
+                  <td key={editar} data-label="Permiso">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
+                        <input
+                          type="checkbox"
+                          checked={!!u[editar]}
+                          disabled={guardandoId === u.id}
+                          onChange={() => handleTogglePermiso(u, editar)}
+                        />
+                        Editar
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
+                        <input
+                          type="checkbox"
+                          checked={!!u[eliminar]}
+                          disabled={guardandoId === u.id}
+                          onChange={() => handleTogglePermiso(u, eliminar)}
+                        />
+                        Eliminar
+                      </label>
+                    </div>
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
