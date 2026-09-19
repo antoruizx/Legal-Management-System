@@ -38,7 +38,15 @@ public class AuthController : ControllerBase
             firstName = user.FirstName,
             lastName = user.LastName,
             email = user.Email,
-            role = user.Role
+            role = user.Role,
+            telefono = user.Telefono,
+            avatarUrl = user.AvatarUrl,
+            puedeEditarClientes = user.PuedeEditarClientes,
+            puedeEliminarClientes = user.PuedeEliminarClientes,
+            puedeEditarExpedientes = user.PuedeEditarExpedientes,
+            puedeEliminarExpedientes = user.PuedeEliminarExpedientes,
+            puedeEditarTareas = user.PuedeEditarTareas,
+            puedeEliminarTareas = user.PuedeEliminarTareas
         });
     }
 
