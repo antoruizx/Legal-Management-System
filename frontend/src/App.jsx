@@ -13,8 +13,8 @@ import ExpedienteDetalle from "./pages/ExpedienteDetalle";
 import Tareas from "./pages/Tareas";
 import TareaForm from "./pages/TareaForm";
 import TareaDetalle from "./pages/TareaDetalle";
-import Usuarios from "./pages/Usuarios";
-import UsuarioDetalle from "./pages/UsuarioDetalle";
+import MiPerfil from "./pages/MiPerfil";
+import ConfiguracionUsuarios from "./pages/ConfiguracionUsuarios";
 import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
@@ -45,8 +45,8 @@ function App() {
             <Route path="/tareas/nuevo" element={<TareaForm />} />
             <Route path="/tareas/:id/editar" element={<TareaForm />} />
             <Route path="/tareas/:id" element={<TareaDetalle />} />
-            <Route path="/usuarios" element={<Usuarios />} />
-            <Route path="/usuarios/:id" element={<UsuarioDetalle />} />
+            <Route path="/mi-perfil" element={<MiPerfil />} />
+            <Route path="/configuracion-usuarios" element={<ConfiguracionUsuarios />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
