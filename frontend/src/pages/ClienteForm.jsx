@@ -68,16 +68,16 @@ export default function ClienteForm() {
         {error && <div className="login-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div className="form-field" style={{ flex: 1 }}>
-              <label>Nombre</label>
-              <input name="nombre" value={form.nombre} onChange={handleChange} required />
+            <div style={{ display: "flex", gap: "12px" }}>
+              <div className="form-field" style={{ flex: 1, minWidth: 0 }}>
+                <label>Nombre</label>
+                <input name="nombre" value={form.nombre} onChange={handleChange} required />
+              </div>
+              <div className="form-field" style={{ flex: 1, minWidth: 0 }}>
+                <label>Apellido</label>
+                <input name="apellido" value={form.apellido} onChange={handleChange} required />
+              </div>
             </div>
-            <div className="form-field" style={{ flex: 1 }}>
-              <label>Apellido</label>
-              <input name="apellido" value={form.apellido} onChange={handleChange} required />
-            </div>
-          </div>
 
           <div className="form-field">
             <label>DNI</label>
