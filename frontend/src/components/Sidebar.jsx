@@ -13,7 +13,7 @@ export default function Sidebar({ open, onClose }) {
         <NavLink to="/tareas" className={linkClass} onClick={onClose}>Tareas</NavLink>
 
         <hr className="sidebar-divider" />
-        <span className="sidebar-label">Configuración</span>
+        <NavLink to="/usuarios" className={linkClass} onClick={onClose}>Usuarios</NavLink>
       </div>
     </>
   );
