@@ -92,7 +92,7 @@ export default function MiPerfil() {
 
   return (
     <div>
-      <BackButton />
+      <BackButton to="/dashboard" />
 
       <div className="page-header">
         <h2>Mi perfil</h2>

@@ -95,7 +95,7 @@ export default function ConfiguracionUsuarios() {
   return (
     <div>
       <div className="page-header">
-        <BackButton />
+        <BackButton to="/dashboard" />
         <h2>Configuración de usuarios</h2>
       </div>
 
