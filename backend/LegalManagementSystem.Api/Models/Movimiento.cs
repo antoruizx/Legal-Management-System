@@ -18,4 +18,7 @@ public class Movimiento
 
     public int ExpedienteId { get; set; }
     public Expediente? Expediente { get; set; }
+
+    public int UserId { get; set; }
+    public User? User { get; set; }
 }

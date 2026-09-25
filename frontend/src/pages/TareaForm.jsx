@@ -59,7 +59,7 @@ export default function TareaForm() {
       if (isEdit) {
         await updateTarea(id, { id: Number(id), ...payload });
       } else {
-        await createTarea(payload);
+        await createTarea(payload, user.id);
       }
       navigate("/tareas");
     } catch (err) {

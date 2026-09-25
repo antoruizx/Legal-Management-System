@@ -40,16 +40,31 @@ public class ExpedientesController : ControllerBase
         return Ok(expediente);
     }
 
-    // POST: api/Expedientes
+    // POST: api/Expedientes?actorUserId=3
     [HttpPost]
-    public async Task<IActionResult> CreateExpediente(Expediente expediente)
+    public async Task<IActionResult> CreateExpediente(Expediente expediente, [FromQuery] int actorUserId)
     {
-        // Validar que el cliente exista
-        var clienteExiste = await _context.Clientes.AnyAsync(c => c.Id == expediente.ClienteId);
-        if (!clienteExiste) return BadRequest($"No existe un cliente con id {expediente.ClienteId}");
+        var cliente = await _context.Clientes.FindAsync(expediente.ClienteId);
+        if (cliente == null) return BadRequest($"No existe un cliente con id {expediente.ClienteId}");
+
+        var actorExiste = await _context.Users.AnyAsync(u => u.Id == actorUserId);
+        if (!actorExiste) return BadRequest($"No existe un usuario con id {actorUserId}");
 
         _context.Expedientes.Add(expediente);
         await _context.SaveChangesAsync();
+
+        // Movimiento automático: creación + asignación de cliente, en un solo evento
+        var movimiento = new Movimiento
+        {
+            ExpedienteId = expediente.Id,
+            UserId = actorUserId,
+            Tipo = "Creación",
+            Descripcion = $"Expediente creado y asignado a {cliente.Nombre} {cliente.Apellido}.",
+            Fecha = DateTime.UtcNow
+        };
+        _context.Movimientos.Add(movimiento);
+        await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetExpediente), new { id = expediente.Id }, expediente);
     }
 

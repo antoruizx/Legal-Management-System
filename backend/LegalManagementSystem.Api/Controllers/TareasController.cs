@@ -46,17 +46,34 @@ public class TareasController : ControllerBase
         return Ok(usuarios);
     }
 
+    // POST: api/Tareas?actorUserId=3
     [HttpPost]
-    public async Task<IActionResult> CreateTarea(Tarea tarea)
+    public async Task<IActionResult> CreateTarea(Tarea tarea, [FromQuery] int actorUserId)
     {
-        var expedienteExiste = await _context.Expedientes.AnyAsync(e => e.Id == tarea.ExpedienteId);
-        if (!expedienteExiste) return BadRequest($"No existe un expediente con id {tarea.ExpedienteId}");
+        var expediente = await _context.Expedientes.FindAsync(tarea.ExpedienteId);
+        if (expediente == null) return BadRequest($"No existe un expediente con id {tarea.ExpedienteId}");
 
         var userExiste = await _context.Users.AnyAsync(u => u.Id == tarea.UserId);
         if (!userExiste) return BadRequest($"No existe un usuario responsable con id {tarea.UserId}");
 
+        var actorExiste = await _context.Users.AnyAsync(u => u.Id == actorUserId);
+        if (!actorExiste) return BadRequest($"No existe un usuario con id {actorUserId}");
+
         _context.Tareas.Add(tarea);
         await _context.SaveChangesAsync();
+
+        // Movimiento automático en el expediente al que pertenece la tarea
+        var movimiento = new Movimiento
+        {
+            ExpedienteId = tarea.ExpedienteId,
+            UserId = actorUserId,
+            Tipo = "Tarea",
+            Descripcion = $"Se creó la tarea \"{tarea.Titulo}\".",
+            Fecha = DateTime.UtcNow
+        };
+        _context.Movimientos.Add(movimiento);
+        await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetTarea), new { id = tarea.Id }, tarea);
     }
 

@@ -7,10 +7,16 @@ import {
   descargarDocumentoUrl,
   eliminarDocumento,
 } from "../api/documentosApi";
+import {
+  getMovimientosPorExpediente,
+  crearMovimiento,
+  eliminarMovimiento,
+} from "../api/movimientosApi";
 import BackButton from "../components/BackButton";
 import { useAuth } from "../context/AuthContext";
 
 const ESTADOS = ["Activo", "En trámite", "Cerrado", "Archivado"];
+const TIPOS_MOVIMIENTO = ["Presentación", "Notificación", "Audiencia", "Resolución", "Otro"];
 
 function getEstadoBadge(estado) {
   switch (estado) {
@@ -27,6 +33,16 @@ function getEstadoBadge(estado) {
   }
 }
 
+function formatFechaHora(fecha) {
+  return new Date(fecha).toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function ExpedienteDetalle() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -37,6 +53,12 @@ export default function ExpedienteDetalle() {
   const [expediente, setExpediente] = useState(null);
   const [error, setError] = useState("");
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
+
+  const [movimientos, setMovimientos] = useState([]);
+  const [tipoMov, setTipoMov] = useState(TIPOS_MOVIMIENTO[0]);
+  const [descripcionMov, setDescripcionMov] = useState("");
+  const [guardandoMov, setGuardandoMov] = useState(false);
+  const [errorMov, setErrorMov] = useState("");
 
   const [documentos, setDocumentos] = useState([]);
   const [archivo, setArchivo] = useState(null);
@@ -54,9 +76,14 @@ export default function ExpedienteDetalle() {
     getDocumentosPorExpediente(id).then((response) => setDocumentos(response.data));
   };
 
+  const cargarMovimientos = () => {
+    getMovimientosPorExpediente(id).then((response) => setMovimientos(response.data));
+  };
+
   useEffect(() => {
     cargarExpediente();
     cargarDocumentos();
+    cargarMovimientos();
   }, [id]);
 
   // Cambiar el estado es una acción permitida para todos los usuarios,
@@ -72,6 +99,39 @@ export default function ExpedienteDetalle() {
       alert("No se pudo actualizar el estado del expediente");
     } finally {
       setCambiandoEstado(false);
+    }
+  };
+
+  const handleCrearMovimiento = async (e) => {
+    e.preventDefault();
+    if (!descripcionMov.trim()) return;
+
+    setGuardandoMov(true);
+    setErrorMov("");
+    try {
+      await crearMovimiento({
+        expedienteId: Number(id),
+        userId: user.id,
+        tipo: tipoMov,
+        descripcion: descripcionMov,
+      });
+      setDescripcionMov("");
+      setTipoMov(TIPOS_MOVIMIENTO[0]);
+      cargarMovimientos();
+    } catch (err) {
+      setErrorMov("No se pudo registrar el movimiento.");
+    } finally {
+      setGuardandoMov(false);
+    }
+  };
+
+  const handleEliminarMovimiento = async (movId) => {
+    if (!confirm("¿Eliminar este movimiento del historial?")) return;
+    try {
+      await eliminarMovimiento(movId);
+      cargarMovimientos();
+    } catch (err) {
+      alert("No se pudo eliminar el movimiento");
     }
   };
 
@@ -158,7 +218,7 @@ export default function ExpedienteDetalle() {
         </div>
         <div className="detail-field">
           <div className="detail-label">Movimientos</div>
-          <div className="detail-value">{expediente.movimientos?.length || 0}</div>
+          <div className="detail-value">{movimientos.length}</div>
         </div>
         <div className="detail-field">
           <div className="detail-label">Documentos</div>
@@ -168,13 +228,61 @@ export default function ExpedienteDetalle() {
 
       <div className="detail-section card">
         <h3>Movimientos</h3>
-        {expediente.movimientos && expediente.movimientos.length > 0 ? (
+
+        {puedeEditar && (
+          <form onSubmit={handleCrearMovimiento} style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
+            <select value={tipoMov} onChange={(e) => setTipoMov(e.target.value)}>
+              {TIPOS_MOVIMIENTO.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Descripción del movimiento"
+              value={descripcionMov}
+              onChange={(e) => setDescripcionMov(e.target.value)}
+              required
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-sm)",
+                padding: "8px 12px",
+                color: "var(--text-hi)",
+                fontSize: "13px",
+                flex: 1,
+                minWidth: "200px",
+              }}
+            />
+            <button type="submit" className="btn btn-primary" disabled={guardandoMov}>
+              {guardandoMov ? "Guardando..." : "Registrar movimiento"}
+            </button>
+          </form>
+        )}
+
+        {errorMov && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{errorMov}</p>}
+
+        {movimientos.length > 0 ? (
           <div className="timeline">
-            {expediente.movimientos.map((m) => (
+            {movimientos.map((m) => (
               <div className="timeline-item" key={m.id}>
-                <div className="timeline-meta">{new Date(m.fecha).toLocaleDateString()}</div>
+                <div className="timeline-meta">{formatFechaHora(m.fecha)}</div>
                 <div className="timeline-title">{m.tipo}</div>
                 <div className="timeline-desc">{m.descripcion}</div>
+                <div style={{ fontSize: 12, color: "var(--text-lo)", marginTop: 4 }}>
+                  Registrado por {m.user ? `${m.user.firstName} ${m.user.lastName}` : "—"}
+                  {puedeEliminar && (
+                    <>
+                      {" · "}
+                      <button
+                        className="btn-danger-ghost"
+                        style={{ fontSize: 12, padding: "2px 6px" }}
+                        onClick={() => handleEliminarMovimiento(m.id)}
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -3,6 +3,7 @@ using System;
 using LegalManagementSystem.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LegalManagementSystem.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260919192350_NombreDeLaMigracion")]
+    partial class NombreDeLaMigracion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,7 +59,7 @@ namespace LegalManagementSystem.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Clientes", (string)null);
+                    b.ToTable("Clientes");
                 });
 
             modelBuilder.Entity("LegalManagementSystem.Api.Models.Documento", b =>
@@ -93,7 +96,7 @@ namespace LegalManagementSystem.Api.Migrations
 
                     b.HasIndex("ExpedienteId");
 
-                    b.ToTable("Documentos", (string)null);
+                    b.ToTable("Documentos");
                 });
 
             modelBuilder.Entity("LegalManagementSystem.Api.Models.Expediente", b =>
@@ -129,7 +132,7 @@ namespace LegalManagementSystem.Api.Migrations
 
                     b.HasIndex("ClienteId");
 
-                    b.ToTable("Expedientes", (string)null);
+                    b.ToTable("Expedientes");
                 });
 
             modelBuilder.Entity("LegalManagementSystem.Api.Models.Movimiento", b =>
@@ -165,7 +168,7 @@ namespace LegalManagementSystem.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Movimientos", (string)null);
+                    b.ToTable("Movimientos");
                 });
 
             modelBuilder.Entity("LegalManagementSystem.Api.Models.Tarea", b =>
@@ -206,7 +209,7 @@ namespace LegalManagementSystem.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tareas", (string)null);
+                    b.ToTable("Tareas");
                 });
 
             modelBuilder.Entity("LegalManagementSystem.Api.Models.User", b =>
@@ -266,7 +269,7 @@ namespace LegalManagementSystem.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("LegalManagementSystem.Api.Models.Documento", b =>
