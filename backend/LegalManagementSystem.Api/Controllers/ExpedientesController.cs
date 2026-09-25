@@ -50,9 +50,11 @@ public class ExpedientesController : ControllerBase
         var actorExiste = await _context.Users.AnyAsync(u => u.Id == actorUserId);
         if (!actorExiste) return BadRequest($"No existe un usuario con id {actorUserId}");
 
+          expediente.FechaCreacion = DateTime.UtcNow;
+
         _context.Expedientes.Add(expediente);
         await _context.SaveChangesAsync();
-
+        
         // Movimiento automático: creación + asignación de cliente, en un solo evento
         var movimiento = new Movimiento
         {

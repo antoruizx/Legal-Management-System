@@ -231,6 +231,10 @@ export default function ExpedienteDetalle() {
           <div className="detail-value">{new Date(expediente.fechaInicio).toLocaleDateString()}</div>
         </div>
         <div className="detail-field">
+          <div className="detail-label">Creado el</div>
+          <div className="detail-value">{new Date(expediente.fechaCreacion).toLocaleDateString()}</div>
+        </div>
+        <div className="detail-field">
           <div className="detail-label">Eventos en el historial</div>
           <div className="detail-value">{movimientos.length}</div>
         </div>

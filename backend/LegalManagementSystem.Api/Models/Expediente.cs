@@ -19,6 +19,8 @@ public class Expediente
 
     public DateTime FechaInicio { get; set; } = DateTime.UtcNow;
 
+    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+
     public int ClienteId { get; set; }
     public Cliente? Cliente { get; set; }
 

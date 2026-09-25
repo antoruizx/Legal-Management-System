@@ -81,6 +81,7 @@ export default function Expedientes() {
               <th>Carátula</th>
               <th>Estado</th>
               <th>Cliente</th>
+              <th>Creado</th>
               {(puedeEditar || puedeEliminar) && <th>Acciones</th>}
             </tr>
           </thead>
@@ -108,6 +109,7 @@ export default function Expedientes() {
                       </Link>
                     ) : "-"}
                   </td>
+                  <td data-label="Creado">{new Date(e.fechaCreacion).toLocaleDateString()}</td>
                   {(puedeEditar || puedeEliminar) && (
                     <td data-label="Acciones">
                       {puedeEditar && (
