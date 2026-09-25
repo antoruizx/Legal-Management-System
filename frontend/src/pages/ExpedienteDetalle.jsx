@@ -59,6 +59,8 @@ export default function ExpedienteDetalle() {
   const [descripcionMov, setDescripcionMov] = useState("");
   const [guardandoMov, setGuardandoMov] = useState(false);
   const [errorMov, setErrorMov] = useState("");
+  const [filtroDesde, setFiltroDesde] = useState("");
+  const [filtroHasta, setFiltroHasta] = useState("");
 
   const [documentos, setDocumentos] = useState([]);
   const [archivo, setArchivo] = useState(null);
@@ -76,8 +78,10 @@ export default function ExpedienteDetalle() {
     getDocumentosPorExpediente(id).then((response) => setDocumentos(response.data));
   };
 
-  const cargarMovimientos = () => {
-    getMovimientosPorExpediente(id).then((response) => setMovimientos(response.data));
+  const cargarMovimientos = (desde, hasta) => {
+    getMovimientosPorExpediente(id, desde || undefined, hasta || undefined).then((response) =>
+      setMovimientos(response.data)
+    );
   };
 
   useEffect(() => {
@@ -117,7 +121,7 @@ export default function ExpedienteDetalle() {
       });
       setDescripcionMov("");
       setTipoMov(TIPOS_MOVIMIENTO[0]);
-      cargarMovimientos();
+      cargarMovimientos(filtroDesde, filtroHasta);
     } catch (err) {
       setErrorMov("No se pudo registrar el movimiento.");
     } finally {
@@ -126,13 +130,23 @@ export default function ExpedienteDetalle() {
   };
 
   const handleEliminarMovimiento = async (movId) => {
-    if (!confirm("¿Eliminar este movimiento del historial?")) return;
+    if (!confirm("¿Eliminar este evento del historial?")) return;
     try {
       await eliminarMovimiento(movId);
-      cargarMovimientos();
+      cargarMovimientos(filtroDesde, filtroHasta);
     } catch (err) {
-      alert("No se pudo eliminar el movimiento");
+      alert("No se pudo eliminar el evento");
     }
+  };
+
+  const handleFiltrar = () => {
+    cargarMovimientos(filtroDesde, filtroHasta);
+  };
+
+  const handleLimpiarFiltro = () => {
+    setFiltroDesde("");
+    setFiltroHasta("");
+    cargarMovimientos();
   };
 
   const handleSubirDocumento = async (e) => {
@@ -217,7 +231,7 @@ export default function ExpedienteDetalle() {
           <div className="detail-value">{new Date(expediente.fechaInicio).toLocaleDateString()}</div>
         </div>
         <div className="detail-field">
-          <div className="detail-label">Movimientos</div>
+          <div className="detail-label">Eventos en el historial</div>
           <div className="detail-value">{movimientos.length}</div>
         </div>
         <div className="detail-field">
@@ -227,7 +241,7 @@ export default function ExpedienteDetalle() {
       </div>
 
       <div className="detail-section card">
-        <h3>Movimientos</h3>
+        <h3>Historial general</h3>
 
         {puedeEditar && (
           <form onSubmit={handleCrearMovimiento} style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
@@ -254,40 +268,73 @@ export default function ExpedienteDetalle() {
               }}
             />
             <button type="submit" className="btn btn-primary" disabled={guardandoMov}>
-              {guardandoMov ? "Guardando..." : "Registrar movimiento"}
+              {guardandoMov ? "Guardando..." : "Agregar al historial"}
             </button>
           </form>
         )}
 
         {errorMov && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{errorMov}</p>}
 
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            flexWrap: "wrap",
+            alignItems: "flex-end",
+            paddingBottom: "12px",
+            marginBottom: "12px",
+            borderBottom: "1px solid var(--border-subtle)",
+          }}
+        >
+          <div className="form-field" style={{ marginBottom: 0 }}>
+            <label style={{ fontSize: 12 }}>Desde</label>
+            <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ marginBottom: 0 }}>
+            <label style={{ fontSize: 12 }}>Hasta</label>
+            <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
+          </div>
+          <button className="btn" onClick={handleFiltrar}>Filtrar</button>
+          {(filtroDesde || filtroHasta) && (
+            <button className="btn" onClick={handleLimpiarFiltro}>Limpiar filtro</button>
+          )}
+        </div>
+
         {movimientos.length > 0 ? (
           <div className="timeline">
             {movimientos.map((m) => (
-              <div className="timeline-item" key={m.id}>
+              <div className="timeline-item" key={m.id} style={{ position: "relative", paddingLeft: 20 }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 6,
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: "var(--primary, #6366f1)",
+                  }}
+                ></span>
+                <div className="timeline-title" style={{ fontWeight: 600 }}>{m.tipo}</div>
                 <div className="timeline-meta">{formatFechaHora(m.fecha)}</div>
-                <div className="timeline-title">{m.tipo}</div>
-                <div className="timeline-desc">{m.descripcion}</div>
-                <div style={{ fontSize: 12, color: "var(--text-lo)", marginTop: 4 }}>
-                  Registrado por {m.user ? `${m.user.firstName} ${m.user.lastName}` : "—"}
-                  {puedeEliminar && (
-                    <>
-                      {" · "}
-                      <button
-                        className="btn-danger-ghost"
-                        style={{ fontSize: 12, padding: "2px 6px" }}
-                        onClick={() => handleEliminarMovimiento(m.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </>
-                  )}
+                <div style={{ fontSize: 12, color: "var(--text-lo)", marginBottom: 4 }}>
+                  Registrado por: {m.user ? `${m.user.firstName} ${m.user.lastName}` : "—"}
                 </div>
+                <div className="timeline-desc">{m.descripcion}</div>
+                {puedeEliminar && (
+                  <button
+                    className="btn-danger-ghost"
+                    style={{ fontSize: 12, padding: "2px 6px", marginTop: 4 }}
+                    onClick={() => handleEliminarMovimiento(m.id)}
+                  >
+                    Eliminar
+                  </button>
+                )}
               </div>
             ))}
           </div>
         ) : (
-          <p className="empty-state">No hay movimientos cargados todavía.</p>
+          <p className="empty-state">No hay eventos para mostrar en este rango.</p>
         )}
       </div>
 

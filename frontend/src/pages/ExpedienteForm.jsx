@@ -9,6 +9,7 @@ export default function ExpedienteForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const puedeEditar = user?.role === "Admin" || user?.puedeEditarExpedientes === true;
 
