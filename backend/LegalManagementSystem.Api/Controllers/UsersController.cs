@@ -2,11 +2,13 @@ using LegalManagementSystem.Api.Data;
 using LegalManagementSystem.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LegalManagementSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -35,6 +37,7 @@ public class UsersController : ControllerBase
 
     // POST: api/Users
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateUser(User user)
     {
         _context.Users.Add(user);
@@ -65,6 +68,7 @@ public class UsersController : ControllerBase
 
     // DELETE: api/Users/5
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(int id)
     {
         var user = await _context.Users.FindAsync(id);

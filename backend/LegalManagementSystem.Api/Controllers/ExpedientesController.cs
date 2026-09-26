@@ -2,11 +2,13 @@ using LegalManagementSystem.Api.Data;
 using LegalManagementSystem.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LegalManagementSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ExpedientesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -50,11 +52,11 @@ public class ExpedientesController : ControllerBase
         var actorExiste = await _context.Users.AnyAsync(u => u.Id == actorUserId);
         if (!actorExiste) return BadRequest($"No existe un usuario con id {actorUserId}");
 
-          expediente.FechaCreacion = DateTime.UtcNow;
+        expediente.FechaCreacion = DateTime.UtcNow;
 
         _context.Expedientes.Add(expediente);
         await _context.SaveChangesAsync();
-        
+
         // Movimiento automático: creación + asignación de cliente, en un solo evento
         var movimiento = new Movimiento
         {

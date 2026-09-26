@@ -2,11 +2,13 @@ using LegalManagementSystem.Api.Data;
 using LegalManagementSystem.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LegalManagementSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class DocumentosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
