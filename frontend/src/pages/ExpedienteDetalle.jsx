@@ -4,7 +4,7 @@ import { getExpediente, updateExpediente } from "../api/expedientesApi";
 import {
   getDocumentosPorExpediente,
   subirDocumento,
-  descargarDocumentoUrl,
+  descargarDocumento,
   eliminarDocumento,
 } from "../api/documentosApi";
 import {
@@ -165,6 +165,14 @@ export default function ExpedienteDetalle() {
       setErrorDoc("No se pudo subir el documento.");
     } finally {
       setSubiendo(false);
+    }
+  };
+
+  const handleDescargarDocumento = async (docId, nombreOriginal) => {
+    try {
+      await descargarDocumento(docId, nombreOriginal);
+    } catch (err) {
+      alert("No se pudo descargar el documento");
     }
   };
 
@@ -412,9 +420,9 @@ export default function ExpedienteDetalle() {
                 </div>
               </div>
               <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <a href={descargarDocumentoUrl(d.id)} target="_blank" rel="noreferrer" className="link-action">
+                <button className="link-action" onClick={() => handleDescargarDocumento(d.id, d.nombreOriginal)}>
                   Descargar
-                </a>
+                </button>
                 {puedeEliminar && (
                   <button className="btn-danger-ghost" onClick={() => handleEliminarDocumento(d.id)}>
                     Eliminar
