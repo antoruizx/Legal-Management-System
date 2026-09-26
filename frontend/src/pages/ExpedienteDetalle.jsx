@@ -209,6 +209,7 @@ export default function ExpedienteDetalle() {
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <select
+            className="btn"
             value={expediente.estado}
             onChange={(e) => handleCambiarEstado(e.target.value)}
             disabled={cambiandoEstado}
@@ -257,7 +258,7 @@ export default function ExpedienteDetalle() {
 
         {puedeEditar && (
           <form onSubmit={handleCrearMovimiento} style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
-            <select value={tipoMov} onChange={(e) => setTipoMov(e.target.value)}>
+            <select className="btn" value={tipoMov} onChange={(e) => setTipoMov(e.target.value)}>
               {TIPOS_MOVIMIENTO.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
