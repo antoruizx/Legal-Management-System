@@ -43,6 +43,13 @@ function formatFechaHora(fecha) {
   });
 }
 
+function formatFechaCreacion(fecha) {
+  if (!fecha) return "-";
+  const d = new Date(fecha);
+  if (d.getFullYear() < 1900) return "-";
+  return d.toLocaleDateString();
+}
+
 export default function ExpedienteDetalle() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -241,7 +248,7 @@ export default function ExpedienteDetalle() {
         </div>
         <div className="detail-field">
           <div className="detail-label">Creado el</div>
-          <div className="detail-value">{new Date(expediente.fechaCreacion).toLocaleDateString()}</div>
+          <div className="detail-value">{formatFechaCreacion(expediente.fechaCreacion)}</div>
         </div>
         <div className="detail-field">
           <div className="detail-label">Eventos en el historial</div>
