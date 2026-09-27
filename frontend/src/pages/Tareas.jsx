@@ -15,6 +15,13 @@ function getEstadoTarea(tarea) {
   return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
 }
 
+function formatFechaCreacion(fecha) {
+  if (!fecha) return "-";
+  const d = new Date(fecha);
+  if (d.getFullYear() < 1900) return "-";
+  return d.toLocaleDateString();
+}
+
 export default function Tareas() {
   const [tareas, setTareas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +116,7 @@ export default function Tareas() {
               <th>Título</th>
               <th>Expediente</th>
               <th>Responsable</th>
+              <th>Creada</th>
               <th>Vencimiento</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -130,6 +138,7 @@ export default function Tareas() {
                     ) : "-"}
                   </td>
                   <td data-label="Responsable">{t.user ? `${t.user.firstName} ${t.user.lastName}` : "-"}</td>
+                  <td data-label="Creada">{formatFechaCreacion(t.fechaCreacion)}</td>
                   <td data-label="Vencimiento">{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
                   <td data-label="Estado">
                     <span className={`badge ${estado.clase}`}>

@@ -13,6 +13,13 @@ function getEstadoTarea(tarea) {
   return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
 }
 
+function formatFechaCreacion(fecha) {
+  if (!fecha) return "-";
+  const d = new Date(fecha);
+  if (d.getFullYear() < 1900) return "-";
+  return d.toLocaleDateString();
+}
+
 export default function TareaDetalle() {
   const { id } = useParams();
   const [tarea, setTarea] = useState(null);
@@ -79,12 +86,20 @@ export default function TareaDetalle() {
           </div>
         </div>
         <div className="detail-field">
+          <div className="detail-label">Tarea creada el</div>
+          <div className="detail-value">{formatFechaCreacion(tarea.fechaCreacion)}</div>
+        </div>
+        <div className="detail-field">
           <div className="detail-label">Expediente</div>
           <div className="detail-value">
             {tarea.expediente
               ? `${tarea.expediente.numero} - ${tarea.expediente.caratula}`
               : "-"}
           </div>
+        </div>
+        <div className="detail-field">
+          <div className="detail-label">Expediente creado el</div>
+          <div className="detail-value">{formatFechaCreacion(tarea.expediente?.fechaCreacion)}</div>
         </div>
         <div className="detail-field">
           <div className="detail-label">Responsable</div>
