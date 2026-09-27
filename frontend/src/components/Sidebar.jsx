@@ -81,8 +81,6 @@ export default function Sidebar({ open, onClose }) {
   const linkClass = ({ isActive }) => `sidebar-link${isActive ? " active" : ""}`;
   const [funcionSeleccionada, setFuncionSeleccionada] = useState(null);
 
-  // Permite que otras partes de la app (como las sticky notes) abran este
-  // mismo modal sin necesidad de pasar props a través de todo el árbol.
   useEffect(() => {
     function handleAbrirModal(e) {
       const funcion = FUNCIONES_PREMIUM.find((f) => f.id === e.detail);
@@ -91,6 +89,8 @@ export default function Sidebar({ open, onClose }) {
     window.addEventListener("abrir-modal-premium", handleAbrirModal);
     return () => window.removeEventListener("abrir-modal-premium", handleAbrirModal);
   }, []);
+
+  const linkWhatsapp = funcionSeleccionada ? armarLinkWhatsapp(funcionSeleccionada.nombre) : "#";
 
   return (
     <>
@@ -162,20 +162,7 @@ export default function Sidebar({ open, onClose }) {
               ))}
             </div>
 
-            
-              href={armarLinkWhatsapp(funcionSeleccionada.nombre)}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-primary"
-              style={{
-                display: "block",
-                textAlign: "center",
-                textDecoration: "none",
-                background: "#25D366",
-                borderColor: "#25D366",
-                marginBottom: 8,
-              }}
-            >
+            <a href={linkWhatsapp} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ display: "block", textAlign: "center", textDecoration: "none", background: "#25D366", borderColor: "#25D366", marginBottom: 8 }}>
               💬 Consultar por WhatsApp
             </a>
             <button className="btn" style={{ width: "100%" }} onClick={() => setFuncionSeleccionada(null)}>
