@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MainLayout from "./layouts/MainLayout";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import ClienteForm from "./pages/ClienteForm";
@@ -16,45 +17,46 @@ import TareaDetalle from "./pages/TareaDetalle";
 import MiPerfil from "./pages/MiPerfil";
 import ConfiguracionUsuarios from "./pages/ConfiguracionUsuarios";
 import { ThemeProvider } from "./context/ThemeContext";
-import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   return (
-        <ThemeProvider>
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-
-          <Route
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/clientes" element={<Clientes />} />
-            <Route path="/clientes/nuevo" element={<ClienteForm />} />
-            <Route path="/clientes/:id/editar" element={<ClienteForm />} />
-            <Route path="/clientes/:id" element={<ClienteDetalle />} />
-            <Route path="/expedientes" element={<Expedientes />} />
-            <Route path="/expedientes/nuevo" element={<ExpedienteForm />} />
-            <Route path="/expedientes/:id/editar" element={<ExpedienteForm />} />
-            <Route path="/expedientes/:id" element={<ExpedienteDetalle />} />
-            <Route path="/tareas" element={<Tareas />} />
-            <Route path="/tareas/nuevo" element={<TareaForm />} />
-            <Route path="/tareas/:id/editar" element={<TareaForm />} />
-            <Route path="/tareas/:id" element={<TareaDetalle />} />
-            <Route path="/mi-perfil" element={<MiPerfil />} />
-            <Route path="/configuracion-usuarios" element={<ConfiguracionUsuarios />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Rutas públicas */}
+            <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-          </Route>
 
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* Rutas protegidas */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/clientes" element={<Clientes />} />
+              <Route path="/clientes/nuevo" element={<ClienteForm />} />
+              <Route path="/clientes/:id/editar" element={<ClienteForm />} />
+              <Route path="/clientes/:id" element={<ClienteDetalle />} />
+              <Route path="/expedientes" element={<Expedientes />} />
+              <Route path="/expedientes/nuevo" element={<ExpedienteForm />} />
+              <Route path="/expedientes/:id/editar" element={<ExpedienteForm />} />
+              <Route path="/expedientes/:id" element={<ExpedienteDetalle />} />
+              <Route path="/tareas" element={<Tareas />} />
+              <Route path="/tareas/nuevo" element={<TareaForm />} />
+              <Route path="/tareas/:id/editar" element={<TareaForm />} />
+              <Route path="/tareas/:id" element={<TareaDetalle />} />
+              <Route path="/mi-perfil" element={<MiPerfil />} />
+              <Route path="/configuracion-usuarios" element={<ConfiguracionUsuarios />} />
+            </Route>
+
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
