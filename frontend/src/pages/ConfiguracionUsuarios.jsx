@@ -83,7 +83,7 @@ export default function ConfiguracionUsuarios() {
       setMostrarForm(false);
       cargarUsers();
     } catch (err) {
-      setErrorForm("No se pudo crear el usuario. Revisá los datos.");
+      setErrorForm(err.response?.data?.message || "No se pudo crear el usuario. Revisá los datos.");
     } finally {
       setCreando(false);
     }
@@ -146,6 +146,9 @@ export default function ConfiguracionUsuarios() {
                 value={nuevo.password}
                 onChange={(e) => setNuevo({ ...nuevo, password: e.target.value })}
                 required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Mínimo 8 caracteres"
               />
             </div>
             <div className="form-field">

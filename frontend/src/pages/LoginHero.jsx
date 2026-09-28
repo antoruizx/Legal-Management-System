@@ -1,5 +1,5 @@
 import { memo } from "react";
-import ParticlesBg from "./ParticlesBg";
+import ParticlesBg from "../components/ParticlesBg";
 
 function LoginHero() {
   return (

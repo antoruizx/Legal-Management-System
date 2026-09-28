@@ -1087,3 +1087,87 @@ a {
   font-family: var(--font-display);
   padding: 14px 12px;
 }
+
+/* ===== Recuperar contraseña por teléfono: selector de país ===== */
+.phone-row {
+  display: flex;
+  gap: 8px;
+}
+
+.phone-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.country-picker {
+  position: relative;
+}
+
+.country-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.country-btn:focus-visible,
+.country-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.country-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 240px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.country-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.country-option:hover,
+.country-option.selected {
+  background: var(--bg-elevated);
+}
+
+.country-option .dial {
+  margin-left: auto;
+  color: var(--text-lo);
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--text-lo);
+}

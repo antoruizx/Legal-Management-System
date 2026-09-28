@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace LegalManagementSystem.Api.Models;
 
@@ -24,5 +25,6 @@ public class Tarea
     public Expediente? Expediente { get; set; }
 
     public int UserId { get; set; }
+    [ValidateNever]
     public User? User { get; set; }
 }

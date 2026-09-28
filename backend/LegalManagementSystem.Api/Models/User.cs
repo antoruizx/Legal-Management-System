@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace LegalManagementSystem.Api.Models;
 
@@ -18,8 +19,9 @@ public class User
     [EmailAddress(ErrorMessage = "El formato de email no es válido")]
     public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "La contraseña es obligatoria")]
-    [MinLength(4, ErrorMessage = "La contraseña debe tener al menos 4 caracteres")]
+    // Guarda el hash BCrypt. [JsonIgnore]: nunca sale en ninguna respuesta de la API
+    // (antes se filtraba en /Users, /Tareas y /Movimientos).
+    [JsonIgnore]
     public string Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El rol es obligatorio")]

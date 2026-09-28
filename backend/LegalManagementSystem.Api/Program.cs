@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using LegalManagementSystem.Api.Services;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +29,9 @@ builder.Services.AddHttpClient<IMessageSender, MessageSender>();
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
 var jwtAudience = builder.Configuration["Jwt:Audience"]!;
+
+if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)
+    throw new InvalidOperationException("Jwt:Key no está configurada o tiene menos de 32 bytes. Definila como variable de entorno Jwt__Key.");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -55,7 +61,7 @@ builder.Services.AddCors(options =>
     {
         policy.SetIsOriginAllowed(origin =>
               {
-                  var uri = new Uri(origin);
+                  if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
                   return uri.Host == "legalmsystem.netlify.app" ||
                          uri.Host.EndsWith(".netlify.app") ||
                          uri.Host == "localhost";
@@ -65,10 +71,33 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Render va detrás de un proxy: sin esto todas las personas parecen tener la misma IP
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Máximo 10 intentos por minuto y por IP en login / recuperación de contraseña
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 var app = builder.Build();
 
-// Aplica automáticamente las migraciones pendientes contra la base de datos
-// configurada (local o la de Render, según el entorno) al arrancar la app.
+app.UseForwardedHeaders();
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -84,6 +113,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -5,6 +5,9 @@ const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // El backend en Render (plan gratuito) puede tardar ~1 minuto en "despertar":
+  // sin timeout la pantalla quedaba cargando para siempre.
+  timeout: 70000,
 });
 
 // Agrega el token JWT a cada petición, si existe uno guardado
@@ -23,14 +26,20 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Si el backend responde 401 (token inválido o vencido), cerramos sesión
-// y mandamos al login para que la persona vuelva a autenticarse.
+// Estas rutas devuelven 401/400 como parte de su funcionamiento normal
+// (contraseña incorrecta, código inválido...). No significan "sesión vencida".
+const esRutaDeAuth = (url = "") => /\/Auth\//i.test(url);
+
+// Si el backend responde 401 en una ruta protegida (token inválido o vencido),
+// cerramos sesión y mandamos al login.
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !esRutaDeAuth(error.config?.url)) {
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

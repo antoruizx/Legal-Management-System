@@ -1,9 +1,12 @@
 using LegalManagementSystem.Api.Data;
+using LegalManagementSystem.Api.Dtos;
 using LegalManagementSystem.Api.Models;
 using LegalManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -64,9 +67,13 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        var email = request.Email.Trim().ToLower();
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrEmpty(request.Password))
+            return Unauthorized(new { message = "Email o contraseña incorrectos" });
+
+        var email = request.Email.Trim().ToLowerInvariant();
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email);
 
         if (user == null || !VerificarPassword(user, request.Password))
@@ -96,13 +103,41 @@ public class AuthController : ControllerBase
         });
     }
 
+    // Solo el primer usuario se puede registrar libremente (queda como Admin).
+    // Después, únicamente un Admin autenticado puede crear cuentas.
+    // (Antes cualquiera podía registrarse mandando role = "Admin".)
     [HttpPost("register")]
-    public async Task<IActionResult> Register(User user)
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> Register(CreateUserRequest request)
     {
-        var existe = await _context.Users.AnyAsync(u => u.Email == user.Email);
-        if (existe) return BadRequest("Ya existe un usuario con ese email");
+        var hayUsuarios = await _context.Users.AnyAsync();
+        if (hayUsuarios && !User.IsInRole(Roles.Admin))
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "No tenés permiso para crear usuarios" });
 
-        user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+        var rol = hayUsuarios ? request.Role : Roles.Admin;
+        if (!Roles.EsValido(rol))
+            return BadRequest(new { message = "Rol inválido" });
+
+        var email = request.Email.Trim();
+        var emailLower = email.ToLowerInvariant();
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == emailLower))
+            return BadRequest(new { message = "Ya existe un usuario con ese email" });
+
+        var user = new User
+        {
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim(),
+            Email = email,
+            Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role = rol,
+            Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim(),
+            PuedeEditarClientes = request.PuedeEditarClientes,
+            PuedeEliminarClientes = request.PuedeEliminarClientes,
+            PuedeEditarExpedientes = request.PuedeEditarExpedientes,
+            PuedeEliminarExpedientes = request.PuedeEliminarExpedientes,
+            PuedeEditarTareas = request.PuedeEditarTareas,
+            PuedeEliminarTareas = request.PuedeEliminarTareas
+        };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
@@ -112,6 +147,7 @@ public class AuthController : ControllerBase
     // ---------- Restablecer contraseña ----------
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
     {
         var channel = (request.Channel ?? "").Trim().ToLower();
@@ -197,6 +233,7 @@ public class AuthController : ControllerBase
 
     // Comprueba que el código sea válido (sin consumirlo)
     [HttpPost("verify-reset-code")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> VerifyResetCode(VerifyCodeRequest request)
     {
         var (_, registro) = await ValidarCodigoAsync(request.Email, request.Phone, request.Code);
@@ -207,6 +244,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 8)
@@ -229,7 +267,7 @@ public class AuthController : ControllerBase
     {
         if (!string.IsNullOrWhiteSpace(email))
         {
-            var mail = email.Trim().ToLower();
+            var mail = email.Trim().ToLowerInvariant();
             return await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == mail);
         }
 
@@ -307,7 +345,7 @@ public class AuthController : ControllerBase
         var jwtKey = _configuration["Jwt:Key"]!;
         var jwtIssuer = _configuration["Jwt:Issuer"]!;
         var jwtAudience = _configuration["Jwt:Audience"]!;
-        var horas = double.Parse(_configuration["Jwt:ExpiraEnHoras"] ?? "8");
+        var horas = double.Parse(_configuration["Jwt:ExpiraEnHoras"] ?? "8", CultureInfo.InvariantCulture);
 
         var claims = new[]
         {

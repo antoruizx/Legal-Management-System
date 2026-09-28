@@ -16,7 +16,7 @@ function avatarUrlDeSemilla(semilla) {
 }
 
 export default function MiPerfil() {
-  const { user, login } = useAuth();
+  const { user, actualizarUsuario } = useAuth();
 
   const [usuarioCompleto, setUsuarioCompleto] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -74,14 +74,20 @@ export default function MiPerfil() {
       };
       await updateUser(usuarioCompleto.id, payload);
 
-      // Guardamos en el contexto/localStorage sin la contraseña, por seguridad
-      const { password, ...userSinPassword } = payload;
-      login(userSinPassword);
+      // Actualizamos la sesión conservando el token (antes se pisaba con el perfil sin token
+      // y la persona quedaba deslogueada en el siguiente pedido).
+      actualizarUsuario({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        telefono: form.telefono,
+        avatarUrl: avatarActual,
+      });
       setUsuarioCompleto(payload);
       setMensaje("Perfil actualizado correctamente.");
     } catch (err) {
       console.error("Error al guardar perfil:", err.response?.data || err);
-      setError("No se pudo guardar el perfil.");
+      setError(err.response?.data?.message || "No se pudo guardar el perfil.");
     } finally {
       setGuardando(false);
     }
