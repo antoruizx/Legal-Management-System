@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getExpedientes, deleteExpediente } from "../api/expedientesApi";
 import BackButton from "../components/BackButton";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { useAuth } from "../context/AuthContext";
 
 function getEstadoBadge(estado) {
@@ -19,8 +20,16 @@ function getEstadoBadge(estado) {
   }
 }
 
+function formatFechaCreacion(fecha) {
+  if (!fecha) return "-";
+  const d = new Date(fecha);
+  if (d.getFullYear() < 1900) return "-";
+  return d.toLocaleDateString();
+}
+
 export default function Expedientes() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const esAdmin = user?.role === "Admin";
   const puedeEditar = esAdmin || user?.puedeEditarExpedientes === true;
   const puedeEliminar = esAdmin || user?.puedeEliminarExpedientes === true;
@@ -28,6 +37,7 @@ export default function Expedientes() {
   const [expedientes, setExpedientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [aEliminar, setAEliminar] = useState(null);
 
   const cargarExpedientes = async () => {
     setLoading(true);
@@ -45,14 +55,15 @@ export default function Expedientes() {
     cargarExpedientes();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!confirm("¿Seguro que querés eliminar este expediente?")) return;
-
+  const confirmarEliminar = async () => {
+    if (!aEliminar) return;
     try {
-      await deleteExpediente(id);
+      await deleteExpediente(aEliminar);
       cargarExpedientes();
     } catch (err) {
       alert("No se pudo eliminar el expediente");
+    } finally {
+      setAEliminar(null);
     }
   };
 
@@ -77,7 +88,7 @@ export default function Expedientes() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Número</th>
+              <th>Código</th>
               <th>Carátula</th>
               <th>Estado</th>
               <th>Cliente</th>
@@ -89,12 +100,14 @@ export default function Expedientes() {
             {expedientes.map((e) => {
               const estado = getEstadoBadge(e.estado);
               return (
-                <tr key={e.id}>
-                  <td data-label="Número">{e.numero}</td>
-                  <td data-label="Carátula">
-                    <Link to={`/expedientes/${e.id}`} style={{ color: "var(--text-hi)", fontWeight: 500 }}>
-                      {e.caratula}
-                    </Link>
+                <tr
+                  key={e.id}
+                  className="clickable-row"
+                  onClick={() => navigate(`/expedientes/${e.id}`)}
+                >
+                  <td data-label="Código">{e.numero}</td>
+                  <td data-label="Carátula" style={{ color: "var(--text-hi)", fontWeight: 500 }}>
+                    {e.caratula}
                   </td>
                   <td data-label="Estado">
                     <span className={`badge ${estado.clase}`}>
@@ -104,20 +117,25 @@ export default function Expedientes() {
                   </td>
                   <td data-label="Cliente">
                     {e.cliente ? (
-                      <Link to={`/clientes/${e.cliente.id}`} className="link-action" style={{ color: "var(--text-hi)" }}>
+                      <Link
+                        to={`/clientes/${e.cliente.id}`}
+                        className="link-action"
+                        style={{ color: "var(--text-hi)" }}
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
                         {e.cliente.nombre} {e.cliente.apellido}
                       </Link>
                     ) : "-"}
                   </td>
-                  <td data-label="Creado">{new Date(e.fechaCreacion).toLocaleDateString()}</td>
+                  <td data-label="Creado">{formatFechaCreacion(e.fechaCreacion)}</td>
                   {(puedeEditar || puedeEliminar) && (
-                    <td data-label="Acciones">
+                    <td data-label="Acciones" onClick={(ev) => ev.stopPropagation()}>
                       {puedeEditar && (
                         <Link to={`/expedientes/${e.id}/editar`} className="link-action">Editar</Link>
                       )}
                       {puedeEditar && puedeEliminar && " · "}
                       {puedeEliminar && (
-                        <button className="btn-danger-ghost" onClick={() => handleDelete(e.id)}>Eliminar</button>
+                        <button className="btn-danger-ghost" onClick={() => setAEliminar(e.id)}>Eliminar</button>
                       )}
                     </td>
                   )}
@@ -129,6 +147,14 @@ export default function Expedientes() {
 
         {expedientes.length === 0 && <p className="empty-state">No hay expedientes cargados todavía.</p>}
       </div>
+
+      <ConfirmDialog
+        abierto={aEliminar !== null}
+        titulo="Eliminar expediente"
+        mensaje="¿Seguro que querés eliminar este expediente? Esta acción no se puede deshacer."
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setAEliminar(null)}
+      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getTareas, updateTarea, deleteTarea } from "../api/tareasApi";
 import BackButton from "../components/BackButton";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 function getEstadoTarea(tarea) {
   if (tarea.completada) return { label: "Completada", clase: "badge-success", dot: "dot-success" };
@@ -23,10 +24,12 @@ function formatFechaCreacion(fecha) {
 }
 
 export default function Tareas() {
+  const navigate = useNavigate();
   const [tareas, setTareas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filtro, setFiltro] = useState("Todas");
+  const [aEliminar, setAEliminar] = useState(null);
 
   const cargarTareas = async () => {
     setLoading(true);
@@ -53,13 +56,15 @@ export default function Tareas() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("¿Seguro que querés eliminar esta tarea?")) return;
+  const confirmarEliminar = async () => {
+    if (!aEliminar) return;
     try {
-      await deleteTarea(id);
+      await deleteTarea(aEliminar);
       cargarTareas();
     } catch (err) {
       alert("No se pudo eliminar la tarea");
+    } finally {
+      setAEliminar(null);
     }
   };
 
@@ -126,13 +131,22 @@ export default function Tareas() {
             {tareasFiltradas.map((t) => {
               const estado = getEstadoTarea(t);
               return (
-                <tr key={t.id}>
-                  <td data-label="Título">
-                    <Link to={`/tareas/${t.id}`} style={{ color: "var(--text-hi)", fontWeight: 500 }}>{t.titulo}</Link>
+                <tr
+                  key={t.id}
+                  className="clickable-row"
+                  onClick={() => navigate(`/tareas/${t.id}`)}
+                >
+                  <td data-label="Título" style={{ color: "var(--text-hi)", fontWeight: 500 }}>
+                    {t.titulo}
                   </td>
                   <td data-label="Expediente">
                     {t.expediente ? (
-                      <Link to={`/expedientes/${t.expediente.id}`} className="link-action" style={{ color: "var(--text-hi)" }}>
+                      <Link
+                        to={`/expedientes/${t.expediente.id}`}
+                        className="link-action"
+                        style={{ color: "var(--text-hi)" }}
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
                         {t.expediente.caratula}
                       </Link>
                     ) : "-"}
@@ -146,14 +160,14 @@ export default function Tareas() {
                       {estado.label}
                     </span>
                   </td>
-                  <td data-label="Acciones">
+                  <td data-label="Acciones" onClick={(ev) => ev.stopPropagation()}>
                     <button className="link-action" onClick={() => handleToggleCompletada(t)}>
                       {t.completada ? "Marcar pendiente" : "Marcar completada"}
                     </button>
                     {" · "}
                     <Link to={`/tareas/${t.id}/editar`} className="link-action">Editar</Link>
                     {" · "}
-                    <button className="btn-danger-ghost" onClick={() => handleDelete(t.id)}>Eliminar</button>
+                    <button className="btn-danger-ghost" onClick={() => setAEliminar(t.id)}>Eliminar</button>
                   </td>
                 </tr>
               );
@@ -163,6 +177,14 @@ export default function Tareas() {
 
         {tareasFiltradas.length === 0 && <p className="empty-state">No hay tareas para este filtro.</p>}
       </div>
+
+      <ConfirmDialog
+        abierto={aEliminar !== null}
+        titulo="Eliminar tarea"
+        mensaje="¿Seguro que querés eliminar esta tarea? Esta acción no se puede deshacer."
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setAEliminar(null)}
+      />
     </div>
   );
 }

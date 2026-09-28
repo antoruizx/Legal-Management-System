@@ -22,6 +22,7 @@ export default function ExpedienteForm() {
     clienteId: "",
   });
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     getClientes().then((response) => setClientes(response.data));
@@ -49,6 +50,7 @@ export default function ExpedienteForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSaving(true);
     const payload = {
       ...form,
       clienteId: Number(form.clienteId),
@@ -62,7 +64,14 @@ export default function ExpedienteForm() {
       }
       navigate("/expedientes");
     } catch (err) {
-      setError("Error al guardar el expediente. Revisa los datos.");
+      const mensajeBackend = err.response?.data;
+      if (typeof mensajeBackend === "string") {
+        setError(mensajeBackend);
+      } else {
+        setError("Error al guardar el expediente. Revisa los datos.");
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -72,7 +81,7 @@ export default function ExpedienteForm() {
       <h2 style={{ marginBottom: "20px" }}>{isEdit ? "Editar Expediente" : "Nuevo Expediente"}</h2>
       <form onSubmit={handleSubmit} className="card form-card">
         <div className="form-field">
-          <label>Numero</label>
+          <label>Código</label>
           <input name="numero" value={form.numero} onChange={handleChange} required />
         </div>
         <div className="form-field">
@@ -102,8 +111,8 @@ export default function ExpedienteForm() {
           </select>
         </div>
         {error && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{error}</p>}
-        <button type="submit" className="btn btn-primary">
-          {isEdit ? "Guardar cambios" : "Crear expediente"}
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear expediente"}
         </button>
       </form>
     </div>

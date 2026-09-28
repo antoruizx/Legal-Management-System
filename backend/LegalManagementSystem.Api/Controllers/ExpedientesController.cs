@@ -52,6 +52,9 @@ public class ExpedientesController : ControllerBase
         var actorExiste = await _context.Users.AnyAsync(u => u.Id == actorUserId);
         if (!actorExiste) return BadRequest($"No existe un usuario con id {actorUserId}");
 
+        var numeroRepetido = await _context.Expedientes.AnyAsync(e => e.Numero == expediente.Numero);
+        if (numeroRepetido) return BadRequest($"Ya existe un expediente con el código \"{expediente.Numero}\". Elegí uno distinto.");
+
         expediente.FechaCreacion = DateTime.UtcNow;
 
         _context.Expedientes.Add(expediente);
@@ -77,6 +80,9 @@ public class ExpedientesController : ControllerBase
     public async Task<IActionResult> UpdateExpediente(int id, Expediente expediente)
     {
         if (id != expediente.Id) return BadRequest("El id de la ruta no coincide con el del body");
+
+        var numeroRepetido = await _context.Expedientes.AnyAsync(e => e.Numero == expediente.Numero && e.Id != id);
+        if (numeroRepetido) return BadRequest($"Ya existe un expediente con el código \"{expediente.Numero}\". Elegí uno distinto.");
 
         _context.Entry(expediente).State = EntityState.Modified;
 

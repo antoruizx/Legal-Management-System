@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
+import ParticlesBg from "../components/ParticlesBg";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -72,21 +73,29 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="login-hero">
-        <div className="login-hero-content">
-          <h1>Gestioná tu estudio jurídico en un solo lugar</h1>
-          <p>
-            Clientes, expedientes y tareas organizados, con vencimientos y estados
-            siempre a la vista.
-          </p>
-          <div className="login-hero-badges">
-            <span className="badge badge-success"><span className="badge-dot dot-success"></span>Activo</span>
-            <span className="badge badge-info"><span className="badge-dot dot-info"></span>En trámite</span>
-            <span className="badge badge-warning"><span className="badge-dot dot-warning"></span>Próxima</span>
-            <span className="badge badge-danger"><span className="badge-dot dot-danger"></span>Urgente</span>
-          </div>
-        </div>
-      </div>
+<div className="login-hero">
+  {/* Orbes de luz */}
+  <div className="login-orb orb-1" />
+  <div className="login-orb orb-2" />
+  <div className="login-orb orb-3" />
+
+  {/* Partículas */}
+  <ParticlesBg />
+
+  <div className="login-hero-content">
+    <h1>Gestioná tu estudio jurídico en un solo lugar</h1>
+    <p>
+      Clientes, expedientes y tareas organizados, con vencimientos y estados
+      siempre a la vista.
+    </p>
+    <div className="login-hero-badges">
+      <span className="badge badge-success"><span className="badge-dot dot-success"></span>Activo</span>
+      <span className="badge badge-info"><span className="badge-dot dot-info"></span>En trámite</span>
+      <span className="badge badge-warning"><span className="badge-dot dot-warning"></span>Próxima</span>
+      <span className="badge badge-danger"><span className="badge-dot dot-danger"></span>Urgente</span>
+    </div>
+  </div>
+</div>
     </div>
   );
 }
