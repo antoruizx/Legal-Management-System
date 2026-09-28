@@ -1,36 +1,9 @@
-import { useState, memo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../context/AuthContext";
 import Logo from "../components/Logo";
-import ParticlesBg from "../components/ParticlesBg";
-
-// Panel derecho aislado: no se vuelve a renderizar al escribir en el formulario
-const LoginHero = memo(function LoginHero() {
-  return (
-    <div className="login-hero">
-      <div className="login-orb orb-1" />
-      <div className="login-orb orb-2" />
-      <div className="login-orb orb-3" />
-
-      <ParticlesBg />
-
-      <div className="login-hero-content">
-        <h1>Gestioná tu estudio jurídico en un solo lugar</h1>
-        <p>
-          Clientes, expedientes y tareas organizados, con vencimientos y estados
-          siempre a la vista.
-        </p>
-        <div className="login-hero-badges">
-          <span className="badge badge-success"><span className="badge-dot dot-success"></span>Activo</span>
-          <span className="badge badge-info"><span className="badge-dot dot-info"></span>En trámite</span>
-          <span className="badge badge-warning"><span className="badge-dot dot-warning"></span>Próxima</span>
-          <span className="badge badge-danger"><span className="badge-dot dot-danger"></span>Urgente</span>
-        </div>
-      </div>
-    </div>
-  );
-});
+import LoginHero from "../components/LoginHero";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -50,7 +23,13 @@ export default function Login() {
       login(response.data);
       navigate("/dashboard");
     } catch (err) {
-      setError("Email o contraseña incorrectos");
+      if (!err.response) {
+        setError("No se pudo conectar con el servidor. Intentá de nuevo en unos minutos.");
+      } else if (err.response.status === 401) {
+        setError("Email o contraseña incorrectos");
+      } else {
+        setError("Ocurrió un error inesperado.");
+      }
     } finally {
       setLoading(false);
     }
@@ -96,6 +75,10 @@ export default function Login() {
             <button type="submit" className="btn btn-primary login-submit" disabled={loading}>
               {loading ? "Ingresando..." : "Ingresar"}
             </button>
+
+            <Link to="/forgot-password" className="login-link">
+              ¿Olvidaste tu contraseña?
+            </Link>
           </form>
         </div>
       </div>

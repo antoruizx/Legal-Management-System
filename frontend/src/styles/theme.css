@@ -1045,3 +1045,45 @@ a {
     animation: none !important;
   }
 }
+
+/* ---------- Recuperar contraseña ---------- */
+.login-link {
+  display: block;
+  margin-top: 16px;
+  text-align: center;
+  color: var(--text-lo);
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  font-family: var(--font-body);
+  transition: color 0.15s;
+}
+.login-link:hover:not(:disabled) { color: var(--accent); }
+.login-link:disabled { opacity: 0.5; cursor: default; }
+
+.login-info {
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  color: var(--success);
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.channel-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.form-field input.code-input {
+  text-align: center;
+  letter-spacing: 12px;
+  font-size: 24px;
+  font-family: var(--font-display);
+  padding: 14px 12px;
+}

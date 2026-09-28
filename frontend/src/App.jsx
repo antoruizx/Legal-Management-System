@@ -16,6 +16,7 @@ import TareaDetalle from "./pages/TareaDetalle";
 import MiPerfil from "./pages/MiPerfil";
 import ConfiguracionUsuarios from "./pages/ConfiguracionUsuarios";
 import { ThemeProvider } from "./context/ThemeContext";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
             <Route path="/tareas/:id" element={<TareaDetalle />} />
             <Route path="/mi-perfil" element={<MiPerfil />} />
             <Route path="/configuracion-usuarios" element={<ConfiguracionUsuarios />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
