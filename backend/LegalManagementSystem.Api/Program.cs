@@ -30,6 +30,8 @@ var jwtKey = builder.Configuration["Jwt:Key"]!;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
 var jwtAudience = builder.Configuration["Jwt:Audience"]!;
 
+// Si falta la clave (o es corta) preferimos que la app falle al arrancar con un mensaje claro,
+// en vez de dar errores raros de login más tarde.
 if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)
     throw new InvalidOperationException("Jwt:Key no está configurada o tiene menos de 32 bytes. Definila como variable de entorno Jwt__Key.");
 
@@ -71,7 +73,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Render va detrás de un proxy: sin esto todas las personas parecen tener la misma IP
+// Render (y Netlify) van detrás de un proxy: sin esto todas las personas parecen tener la misma IP
+// y el límite de intentos de login afectaría a todos juntos.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -79,7 +82,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-// Máximo 10 intentos por minuto y por IP en login / recuperación de contraseña
+// Freno a la fuerza bruta: máximo 10 intentos por minuto y por IP en login / recuperación de contraseña
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -98,6 +101,8 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+// Aplica automáticamente las migraciones pendientes contra la base de datos
+// configurada (local o la de Render, según el entorno) al arrancar la app.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

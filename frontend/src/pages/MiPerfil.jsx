@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getUser, updateUser } from "../api/usersApi";
+import { changePassword, testEmail } from "../api/authApi";
 import BackButton from "../components/BackButton";
 
 function iniciales(nombre, apellido) {
@@ -26,6 +27,18 @@ export default function MiPerfil() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+
+  // Diagnóstico de mail (solo Admin)
+  const [probandoMail, setProbandoMail] = useState(false);
+  const [resultadoMail, setResultadoMail] = useState(null);
+
+  // Cambio de contraseña
+  const [passActual, setPassActual] = useState("");
+  const [passNueva, setPassNueva] = useState("");
+  const [passConfirmar, setPassConfirmar] = useState("");
+  const [cambiandoPass, setCambiandoPass] = useState(false);
+  const [errorPass, setErrorPass] = useState("");
+  const [mensajePass, setMensajePass] = useState("");
 
   useEffect(() => {
     if (!user?.id) return;
@@ -90,6 +103,60 @@ export default function MiPerfil() {
       setError(err.response?.data?.message || "No se pudo guardar el perfil.");
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const handleProbarMail = async () => {
+    setProbandoMail(true);
+    setResultadoMail(null);
+    try {
+      const res = await testEmail();
+      setResultadoMail(res.data);
+    } catch (err) {
+      setResultadoMail({
+        ok: false,
+        detalle: err.response?.data?.message || "No se pudo llamar al servidor.",
+      });
+    } finally {
+      setProbandoMail(false);
+    }
+  };
+
+  const handleCambiarPassword = async (e) => {
+    e.preventDefault();
+    setErrorPass("");
+    setMensajePass("");
+
+    if (passNueva.length < 8) {
+      setErrorPass("La contraseña nueva debe tener al menos 8 caracteres.");
+      return;
+    }
+    if (passNueva !== passConfirmar) {
+      setErrorPass("Las contraseñas nuevas no coinciden.");
+      return;
+    }
+    if (passNueva === passActual) {
+      setErrorPass("La contraseña nueva debe ser distinta de la actual.");
+      return;
+    }
+
+    setCambiandoPass(true);
+    try {
+      const res = await changePassword(passActual, passNueva);
+      setMensajePass(res.data?.message || "Contraseña actualizada correctamente.");
+      setPassActual("");
+      setPassNueva("");
+      setPassConfirmar("");
+    } catch (err) {
+      if (err.response?.status === 429) {
+        setErrorPass("Demasiados intentos. Esperá un minuto y volvé a probar.");
+      } else if (err.code === "ECONNABORTED" || !err.response) {
+        setErrorPass("No se pudo conectar con el servidor. Intentá de nuevo.");
+      } else {
+        setErrorPass(err.response.data?.message || "No se pudo cambiar la contraseña.");
+      }
+    } finally {
+      setCambiandoPass(false);
     }
   };
 
@@ -209,7 +276,10 @@ export default function MiPerfil() {
 
           <div className="form-field">
             <label>Teléfono</label>
-            <input name="telefono" value={form.telefono} onChange={handleChange} placeholder="Ej: 381 4123456" />
+            <input name="telefono" value={form.telefono} onChange={handleChange} placeholder="Ej: +54 381 4123456" />
+            <span className="field-hint">
+              Guardalo con el código de país (+54...). Se usa para recuperar la contraseña por SMS o WhatsApp.
+            </span>
           </div>
 
           <div className="form-field">
@@ -222,6 +292,93 @@ export default function MiPerfil() {
           </button>
         </form>
       </div>
+
+      <div className="card form-card">
+        <h3>Cambiar contraseña</h3>
+
+        {errorPass && <div className="login-error">{errorPass}</div>}
+        {mensajePass && <div className="login-info">{mensajePass}</div>}
+
+        <form onSubmit={handleCambiarPassword}>
+          {/* Campo de usuario oculto: ayuda al navegador a actualizar la contraseña guardada correcta */}
+          <input
+            type="email"
+            name="username"
+            autoComplete="username"
+            value={form.email}
+            readOnly
+            hidden
+          />
+
+          <div className="form-field">
+            <label htmlFor="pass-actual">Contraseña actual</label>
+            <input
+              id="pass-actual"
+              type="password"
+              value={passActual}
+              onChange={(e) => setPassActual(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="pass-nueva">Contraseña nueva</label>
+            <input
+              id="pass-nueva"
+              type="password"
+              value={passNueva}
+              onChange={(e) => setPassNueva(e.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              placeholder="Mínimo 8 caracteres"
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="pass-confirmar">Repetí la contraseña nueva</label>
+            <input
+              id="pass-confirmar"
+              type="password"
+              value={passConfirmar}
+              onChange={(e) => setPassConfirmar(e.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" disabled={cambiandoPass}>
+            {cambiandoPass ? "Guardando..." : "Cambiar contraseña"}
+          </button>
+        </form>
+      </div>
+
+      {user?.role === "Admin" && (
+        <div className="card form-card">
+          <h3>Probar envío de mail</h3>
+          <p style={{ color: "var(--text-lo)", fontSize: 13, marginBottom: 12 }}>
+            Envía un mail de prueba a {user.email} y muestra qué respondió el servicio de correo.
+            Sirve para saber por qué no llegan los códigos de recuperación.
+          </p>
+
+          <button type="button" className="btn" onClick={handleProbarMail} disabled={probandoMail}>
+            {probandoMail ? "Enviando..." : "Enviar mail de prueba"}
+          </button>
+
+          {resultadoMail && (
+            <div
+              className={resultadoMail.ok ? "login-info" : "login-error"}
+              style={{ marginTop: 12, wordBreak: "break-word" }}
+            >
+              {resultadoMail.ok
+                ? `Brevo aceptó el mail para ${resultadoMail.enviadoA}. Si no lo ves en unos minutos, revisá Spam y Promociones.`
+                : `No se pudo enviar: ${resultadoMail.detalle}`}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ using LegalManagementSystem.Api.Data;
 using LegalManagementSystem.Api.Dtos;
 using LegalManagementSystem.Api.Models;
 using LegalManagementSystem.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,12 @@ public class VerifyCodeRequest
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public string Code { get; set; } = string.Empty;
+}
+
+public class ChangePasswordRequest
+{
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
 }
 
 public class ResetPasswordRequest
@@ -144,6 +151,60 @@ public class AuthController : ControllerBase
         return Ok(new { id = user.Id, email = user.Email });
     }
 
+    // ---------- Cambiar contraseña desde "Mi perfil" ----------
+
+    // Por ahora pide la contraseña actual y listo (sin código por mail/SMS).
+    // Siempre cambia la contraseña de QUIEN ESTÁ LOGUEADO: el id sale del token, no del body.
+    [HttpPost("change-password")]
+    [Authorize]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId))
+            return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 8)
+            return BadRequest(new { message = "La contraseña nueva debe tener al menos 8 caracteres" });
+
+        if (request.NewPassword.Length > 100)
+            return BadRequest(new { message = "La contraseña nueva es demasiado larga" });
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return Unauthorized();
+
+        // 400 (y no 401) a propósito: una contraseña actual mal escrita no significa "sesión vencida"
+        if (!VerificarPassword(user, request.CurrentPassword ?? ""))
+            return BadRequest(new { message = "La contraseña actual es incorrecta" });
+
+        if (request.NewPassword == request.CurrentPassword)
+            return BadRequest(new { message = "La contraseña nueva debe ser distinta de la actual" });
+
+        user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Contraseña actualizada correctamente." });
+    }
+
+    // ---------- Diagnóstico de mail (solo Admin) ----------
+
+    // Manda un mail de prueba al email del Admin logueado y devuelve lo que respondió Brevo.
+    // Sirve para saber por qué no llegan los códigos, sin tener que mirar los logs de Render.
+    [HttpPost("test-email")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> TestEmail()
+    {
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest(new { message = "No se encontró tu email en la sesión" });
+
+        var resultado = await _sender.SendEmailAsync(
+            email,
+            "Prueba de mail - Legal Management System",
+            "<p>Si estás leyendo esto, el envío de mails funciona.</p>");
+
+        return Ok(new { enviadoA = email, resultado.Ok, detalle = resultado.Detail });
+    }
+
     // ---------- Restablecer contraseña ----------
 
     [HttpPost("forgot-password")]
@@ -213,7 +274,9 @@ public class AuthController : ControllerBase
             switch (channel)
             {
                 case "email":
-                    await _sender.SendEmailAsync(user.Email, "Tu código de recuperación", HtmlMail(user.FirstName, code));
+                    var envio = await _sender.SendEmailAsync(user.Email, "Tu código de recuperación", HtmlMail(user.FirstName, code));
+                    if (!envio.Ok)
+                        _logger.LogError("No se pudo enviar el código por mail a {Email}: {Detalle}", user.Email, envio.Detail);
                     break;
                 case "sms":
                     await _sender.SendSmsAsync(telefonoDestino!, texto);

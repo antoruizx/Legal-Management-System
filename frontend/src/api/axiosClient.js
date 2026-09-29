@@ -28,7 +28,9 @@ axiosClient.interceptors.request.use((config) => {
 
 // Estas rutas devuelven 401/400 como parte de su funcionamiento normal
 // (contraseña incorrecta, código inválido...). No significan "sesión vencida".
-const esRutaDeAuth = (url = "") => /\/Auth\//i.test(url);
+// OJO: /Auth/change-password NO está acá: requiere sesión, así que un 401 ahí sí es sesión vencida.
+const RUTAS_PUBLICAS = /\/Auth\/(login|register|forgot-password|verify-reset-code|reset-password)/i;
+const esRutaDeAuth = (url = "") => RUTAS_PUBLICAS.test(url);
 
 // Si el backend responde 401 en una ruta protegida (token inválido o vencido),
 // cerramos sesión y mandamos al login.
