@@ -17,14 +17,15 @@ public class MessageSender : IMessageSender
         _logger = logger;
     }
 
-    public async Task SendEmailAsync(string to, string subject, string html)
+    public async Task<SendResult> SendEmailAsync(string to, string subject, string html)
     {
         var apiKey = _config["Brevo:ApiKey"];
         var senderEmail = _config["Brevo:SenderEmail"];
         if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(senderEmail))
         {
-            _logger.LogWarning("Brevo no está configurado: no se envió el mail.");
-            return;
+            const string faltan = "Brevo no está configurado: faltan las variables Brevo__ApiKey y/o Brevo__SenderEmail en el servidor.";
+            _logger.LogWarning(faltan);
+            return new SendResult(false, faltan);
         }
 
         var payload = new
@@ -35,13 +36,29 @@ public class MessageSender : IMessageSender
             htmlContent = html
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
-        req.Headers.Add("api-key", apiKey);
-        req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+            req.Headers.Add("api-key", apiKey);
+            req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        var res = await _http.SendAsync(req);
-        if (!res.IsSuccessStatusCode)
-            _logger.LogError("Brevo devolvió {Status}: {Body}", res.StatusCode, await res.Content.ReadAsStringAsync());
+            var res = await _http.SendAsync(req);
+            var body = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                _logger.LogError("Brevo devolvió {Status}: {Body}", (int)res.StatusCode, body);
+                return new SendResult(false, $"Brevo respondió {(int)res.StatusCode}: {body}");
+            }
+
+            _logger.LogInformation("Brevo aceptó el mail para {To}: {Body}", to, body);
+            return new SendResult(true, body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudo contactar a Brevo");
+            return new SendResult(false, $"No se pudo contactar a Brevo: {ex.Message}");
+        }
     }
 
     public Task SendSmsAsync(string toPhone, string text)
