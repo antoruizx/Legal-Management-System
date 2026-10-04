@@ -27,4 +27,6 @@ public class Tarea
     public int UserId { get; set; }
     [ValidateNever]
     public User? User { get; set; }
+
+    public int TenantId { get; set; }
 }

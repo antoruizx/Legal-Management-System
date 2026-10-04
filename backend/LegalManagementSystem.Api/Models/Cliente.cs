@@ -26,4 +26,6 @@ public class Cliente
     public DateTime FechaAlta { get; set; } = DateTime.UtcNow;
 
     public ICollection<Expediente> Expedientes { get; set; } = new List<Expediente>();
+
+    public int TenantId { get; set; }
 }

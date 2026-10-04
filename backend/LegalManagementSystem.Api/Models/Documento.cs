@@ -19,4 +19,6 @@ public class Documento
 
     public int ExpedienteId { get; set; }
     public Expediente? Expediente { get; set; }
+
+    public int TenantId { get; set; }
 }

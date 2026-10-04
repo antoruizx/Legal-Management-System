@@ -28,4 +28,6 @@ public class Expediente
     public ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
 
     public ICollection<Documento> Documentos { get; set; } = new List<Documento>();
+
+    public int TenantId { get; set; }
 }

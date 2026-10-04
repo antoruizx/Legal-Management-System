@@ -30,6 +30,8 @@ public class User
     [MaxLength(30)]
     public string? Telefono { get; set; }
 
+    public int TenantId { get; set; }
+
     public string? AvatarUrl { get; set; }
 
     public bool PuedeEditarClientes { get; set; } = false;
