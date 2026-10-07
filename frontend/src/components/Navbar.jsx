@@ -181,7 +181,7 @@ export default function Navbar({ onToggleSidebar }) {
               <img
                 src={user.avatarUrl}
                 alt=""
-                style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
+                style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", background: "var(--color-primary-light)" }}
               />
             ) : (
               <span className="client-avatar" style={{ width: 28, height: 28, fontSize: 12 }}>

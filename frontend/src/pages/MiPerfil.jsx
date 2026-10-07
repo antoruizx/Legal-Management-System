@@ -8,12 +8,30 @@ function iniciales(nombre, apellido) {
   return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
 }
 
+// Avatares 3D: Fluent Emoji de Microsoft (licencia MIT), servidos por jsDelivr.
+const AVATAR_BASE = "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets";
+const AVATAR_PERSONAJES = [
+  "Man judge", "Woman judge", "Man office worker", "Woman office worker",
+  "Man technologist", "Woman technologist", "Man teacher", "Woman teacher",
+  "Man student", "Woman student", "Person", "Man", "Woman",
+  "Man beard", "Man bald", "Woman red hair", "Woman blonde hair",
+  "Woman curly hair", "Person curly hair", "Person white hair",
+];
+const AVATAR_TONOS = ["Default", "Light", "Medium-Light", "Medium", "Medium-Dark", "Dark"];
+
+// Cada "semilla" es un personaje con un tono de piel al azar, sin repetir personaje
 function generarSemillas(cantidad = 10) {
-  return Array.from({ length: cantidad }, () => Math.random().toString(36).slice(2, 10));
+  const mezclados = [...AVATAR_PERSONAJES].sort(() => Math.random() - 0.5);
+  return mezclados.slice(0, cantidad).map((personaje) => {
+    const tono = AVATAR_TONOS[Math.floor(Math.random() * AVATAR_TONOS.length)];
+    return `${personaje}|${tono}`;
+  });
 }
 
 function avatarUrlDeSemilla(semilla) {
-  return `https://api.dicebear.com/9.x/notionists/svg?seed=${semilla}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+  const [personaje, tono] = semilla.split("|");
+  const archivo = `${personaje.toLowerCase().replaceAll(" ", "_")}_3d_${tono.toLowerCase()}.png`;
+  return `${AVATAR_BASE}/${encodeURIComponent(personaje)}/${tono}/3D/${archivo}`;
 }
 
 export default function MiPerfil() {
@@ -186,7 +204,7 @@ export default function MiPerfil() {
             <img
               src={avatarActual}
               alt=""
-              style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-subtle)" }}
+              style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", background: "var(--color-primary-light)", border: "2px solid var(--border-subtle)" }}
             />
           ) : (
             <div className="client-avatar" style={{ width: 64, height: 64, fontSize: 22 }}>
@@ -222,7 +240,7 @@ export default function MiPerfil() {
               width: 56,
               height: 56,
               borderRadius: "50%",
-              border: avatarActual === null ? "2px solid var(--primary, #6366f1)" : "1px solid var(--border-subtle)",
+              border: avatarActual === null ? "2px solid var(--accent)" : "1px solid var(--border-subtle)",
               padding: 0,
               cursor: "pointer",
               background: "transparent",
@@ -246,14 +264,14 @@ export default function MiPerfil() {
                   width: 56,
                   height: 56,
                   borderRadius: "50%",
-                  border: seleccionado ? "2px solid var(--primary, #6366f1)" : "1px solid var(--border-subtle)",
+                  border: seleccionado ? "2px solid var(--accent)" : "1px solid var(--border-subtle)",
                   padding: 0,
                   cursor: "pointer",
                   overflow: "hidden",
-                  background: "var(--bg-elevated)",
+                  background: "var(--color-primary-light)",
                 }}
               >
-                <img src={url} alt="" style={{ width: "100%", height: "100%" }} />
+                <img src={url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
               </button>
             );
           })}
