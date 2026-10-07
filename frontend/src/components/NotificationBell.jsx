@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTareas } from "../api/tareasApi";
+import Icon from "./Icon";
 
 function clasificar(tarea) {
   const hoy = new Date();
@@ -36,7 +37,7 @@ export default function NotificationBell() {
   return (
     <div style={{ position: "relative" }}>
       <button className="icon-btn" onClick={() => setAbierto(!abierto)} style={{ position: "relative" }}>
-        🔔
+        <Icon name="bell" size={18} />
         {total > 0 && (
           <span
             style={{

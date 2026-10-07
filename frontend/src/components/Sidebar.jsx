@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
+import Icon from "./Icon";
 
 const WHATSAPP_NUMERO = "5493814988682";
 
 const FUNCIONES_PREMIUM = [
   {
     id: "asistente",
-    icono: "🤖",
+    icono: "bot",
     nombre: "Asistente virtual",
     descripcion: "Un asistente con inteligencia artificial integrado al sistema, que responde preguntas sobre tus clientes, expedientes y tareas en lenguaje natural.",
     beneficios: [
@@ -17,7 +18,7 @@ const FUNCIONES_PREMIUM = [
   },
   {
     id: "crm",
-    icono: "📊",
+    icono: "chart",
     nombre: "CRM",
     descripcion: "Gestión de potenciales clientes (leads) desde el primer contacto hasta que se convierten en clientes del estudio.",
     beneficios: [
@@ -28,7 +29,7 @@ const FUNCIONES_PREMIUM = [
   },
   {
     id: "whatsapp",
-    icono: "💬",
+    icono: "message",
     nombre: "Recordatorios por WhatsApp",
     descripcion: "Los recordatorios de tareas y notas se envían directo al WhatsApp del responsable, además del email.",
     beneficios: [
@@ -39,7 +40,7 @@ const FUNCIONES_PREMIUM = [
   },
   {
     id: "portal-cliente",
-    icono: "👤",
+    icono: "user",
     nombre: "Portal del cliente",
     descripcion: "Un acceso limitado para que tus clientes vean el estado de su propio expediente, sin llamar al estudio.",
     beneficios: [
@@ -50,7 +51,7 @@ const FUNCIONES_PREMIUM = [
   },
   {
     id: "firma-digital",
-    icono: "✍️",
+    icono: "pen",
     nombre: "Firma digital de documentos",
     descripcion: "Tus clientes pueden firmar documentos subidos al sistema directamente desde su celular o computadora.",
     beneficios: [
@@ -61,7 +62,7 @@ const FUNCIONES_PREMIUM = [
   },
   {
     id: "reportes",
-    icono: "📈",
+    icono: "trending",
     nombre: "Reportes y estadísticas avanzadas",
     descripcion: "Gráficos y métricas sobre la actividad del estudio: carga de trabajo por abogado, expedientes por estado, tiempos promedio de resolución.",
     beneficios: [
@@ -96,35 +97,24 @@ export default function Sidebar({ open, onClose }) {
     <>
       <div className={`sidebar-overlay${open ? " visible" : ""}`} onClick={onClose} />
       <div className={`sidebar${open ? " open" : ""}`}>
-        <NavLink to="/dashboard" className={linkClass} onClick={onClose}>Dashboard</NavLink>
-        <NavLink to="/clientes" className={linkClass} onClick={onClose}>Clientes</NavLink>
-        <NavLink to="/expedientes" className={linkClass} onClick={onClose}>Expedientes</NavLink>
-        <NavLink to="/tareas" className={linkClass} onClick={onClose}>Tareas</NavLink>
-
-        <hr className="sidebar-divider" />
-        <div style={{ padding: "8px 16px 4px", fontSize: 12, color: "var(--text-lo)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-          Funciones adicionales
+        <div className="sidebar-brand">
+          <img src="/jp-estudio-juridico-logo.png" alt="Logo JP Estudio Jurídico" />
+          <span>Legal Management System</span>
         </div>
 
+        <NavLink to="/dashboard" className={linkClass} onClick={onClose}><Icon name="home" /> Dashboard</NavLink>
+        <NavLink to="/clientes" className={linkClass} onClick={onClose}><Icon name="users" /> Clientes</NavLink>
+        <NavLink to="/expedientes" className={linkClass} onClick={onClose}><Icon name="folder" /> Expedientes</NavLink>
+        <NavLink to="/tareas" className={linkClass} onClick={onClose}><Icon name="tasks" /> Tareas</NavLink>
+
+        <hr className="sidebar-divider" />
+        <div className="sidebar-label">Funciones adicionales</div>
+
         {FUNCIONES_PREMIUM.map((f) => (
-          <button
-            key={f.id}
-            className="sidebar-link"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              cursor: "pointer",
-              opacity: 0.75,
-            }}
-            onClick={() => setFuncionSeleccionada(f)}
-          >
-            <span>{f.icono} {f.nombre}</span>
-            <span>🔒</span>
+          <button key={f.id} className="sidebar-link" onClick={() => setFuncionSeleccionada(f)}>
+            <Icon name={f.icono} />
+            {f.nombre}
+            <span className="sidebar-lock"><Icon name="lock" size={14} /></span>
           </button>
         ))}
       </div>
@@ -147,7 +137,7 @@ export default function Sidebar({ open, onClose }) {
             style={{ maxWidth: 420, width: "90%", padding: 24 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontSize: 32, marginBottom: 8 }}>{funcionSeleccionada.icono}</div>
+            <div className="kpi-icon" style={{ marginBottom: 12 }}><Icon name={funcionSeleccionada.icono} size={22} /></div>
             <h3 style={{ marginBottom: 8 }}>{funcionSeleccionada.nombre}</h3>
             <p style={{ color: "var(--text-lo)", fontSize: 14, marginBottom: 16 }}>
               {funcionSeleccionada.descripcion}

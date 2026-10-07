@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
+import Icon from "./Icon";
 import { getClientes } from "../api/clientesApi";
 import { getExpedientes } from "../api/expedientesApi";
 import { getTareas } from "../api/tareasApi";
@@ -104,19 +105,10 @@ export default function Navbar({ onToggleSidebar }) {
 
   return (
     <div className="navbar">
-      <button className="hamburger-btn" onClick={onToggleSidebar}>☰</button>
-
-      <div className="navbar-logo">
-        <img
-          src="/jp-estudio-juridico-logo.png"
-          alt="Logo JP Estudio Jurídico"
-          className="logo-circular"
-        />
-        <span>Legal Management System</span>
-      </div>
+      <button className="hamburger-btn" onClick={onToggleSidebar} aria-label="Abrir menú"><Icon name="menu" size={22} /></button>
 
       <div className="navbar-search" ref={searchRef}>
-        <span>🔍</span>
+        <Icon name="search" size={16} />
         <input
           type="text"
           placeholder="Buscar cliente, expediente o tarea..."
@@ -174,7 +166,7 @@ export default function Navbar({ onToggleSidebar }) {
 
       <div className="navbar-actions">
         <button className="icon-btn" onClick={toggleTheme} title="Cambiar tema">
-          {theme === "dark" ? "☀️" : "🌙"}
+          <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
         </button>
 
         <NotificationBell />
@@ -196,7 +188,7 @@ export default function Navbar({ onToggleSidebar }) {
                 {iniciales(user?.firstName, user?.lastName)}
               </span>
             )}
-            {user?.firstName} ▾
+            {user?.firstName} <Icon name="chevronDown" size={14} />
           </button>
 
           {menuAbierto && (
