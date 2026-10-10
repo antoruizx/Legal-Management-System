@@ -482,3 +482,6 @@ $RECYCLE.BIN/
 *.swp
 
 backend/LegalManagementSystem.Api/Uploads/
+
+CLAUDE.md
+referencias-claude/
