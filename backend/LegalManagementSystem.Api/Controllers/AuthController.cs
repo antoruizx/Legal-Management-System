@@ -6,12 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Globalization;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace LegalManagementSystem.Api.Controllers;
 
@@ -54,21 +50,21 @@ public class ResetPasswordRequest
 public class AuthController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IConfiguration _configuration;
     private readonly IMessageSender _sender;
+    private readonly ITokenService _tokenService;
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         ApplicationDbContext context,
-        IConfiguration configuration,
         IMessageSender sender,
+        ITokenService tokenService,
         IWebHostEnvironment env,
         ILogger<AuthController> logger)
     {
         _context = context;
-        _configuration = configuration;
         _sender = sender;
+        _tokenService = tokenService;
         _env = env;
         _logger = logger;
     }
@@ -81,15 +77,16 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Email o contraseña incorrectos" });
 
         var email = request.Email.Trim().ToLowerInvariant();
+        // Nadie está logueado todavía: el filtro de tenant está desactivado, busca en todos los estudios
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email);
 
         if (user == null || !VerificarPassword(user, request.Password))
             return Unauthorized(new { message = "Email o contraseña incorrectos" });
 
-        // Si venía en texto plano, VerificarPassword ya la convirtió a hash: la guardamos
         await _context.SaveChangesAsync();
 
-        var token = GenerarToken(user);
+        var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId);
+        var token = _tokenService.GenerarToken(user);
 
         return Ok(new
         {
@@ -101,6 +98,8 @@ public class AuthController : ControllerBase
             role = user.Role,
             telefono = user.Telefono,
             avatarUrl = user.AvatarUrl,
+            tenantId = user.TenantId,
+            tenantName = tenant?.Name,
             puedeEditarClientes = user.PuedeEditarClientes,
             puedeEliminarClientes = user.PuedeEliminarClientes,
             puedeEditarExpedientes = user.PuedeEditarExpedientes,
@@ -110,24 +109,21 @@ public class AuthController : ControllerBase
         });
     }
 
-    // Solo el primer usuario se puede registrar libremente (queda como Admin).
-    // Después, únicamente un Admin autenticado puede crear cuentas.
-    // (Antes cualquiera podía registrarse mandando role = "Admin".)
+    // Crear usuarios nuevos dentro de TU estudio: ahora siempre requiere un Admin logueado.
+    // El primer admin de un estudio nuevo se crea con POST /api/tenants/register, no acá.
     [HttpPost("register")]
+    [Authorize(Roles = Roles.Admin)]
     [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(CreateUserRequest request)
     {
-        var hayUsuarios = await _context.Users.AnyAsync();
-        if (hayUsuarios && !User.IsInRole(Roles.Admin))
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "No tenés permiso para crear usuarios" });
-
-        var rol = hayUsuarios ? request.Role : Roles.Admin;
-        if (!Roles.EsValido(rol))
+        if (!Roles.EsValido(request.Role))
             return BadRequest(new { message = "Rol inválido" });
 
         var email = request.Email.Trim();
         var emailLower = email.ToLowerInvariant();
-        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == emailLower))
+        // El filtro de tenant sigue activo acá (hay un Admin logueado), pero el email
+        // tiene que ser único en TODA la app, no solo en este estudio.
+        if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email.ToLower() == emailLower))
             return BadRequest(new { message = "Ya existe un usuario con ese email" });
 
         var user = new User
@@ -136,7 +132,7 @@ public class AuthController : ControllerBase
             LastName = request.LastName.Trim(),
             Email = email,
             Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = rol,
+            Role = request.Role,
             Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim(),
             PuedeEditarClientes = request.PuedeEditarClientes,
             PuedeEliminarClientes = request.PuedeEliminarClientes,
@@ -144,6 +140,7 @@ public class AuthController : ControllerBase
             PuedeEliminarExpedientes = request.PuedeEliminarExpedientes,
             PuedeEditarTareas = request.PuedeEditarTareas,
             PuedeEliminarTareas = request.PuedeEliminarTareas
+            // TenantId se asigna solo (SaveChanges), con el tenant del Admin logueado
         };
 
         _context.Users.Add(user);
@@ -153,8 +150,6 @@ public class AuthController : ControllerBase
 
     // ---------- Cambiar contraseña desde "Mi perfil" ----------
 
-    // Por ahora pide la contraseña actual y listo (sin código por mail/SMS).
-    // Siempre cambia la contraseña de QUIEN ESTÁ LOGUEADO: el id sale del token, no del body.
     [HttpPost("change-password")]
     [Authorize]
     [EnableRateLimiting("auth")]
@@ -172,7 +167,6 @@ public class AuthController : ControllerBase
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return Unauthorized();
 
-        // 400 (y no 401) a propósito: una contraseña actual mal escrita no significa "sesión vencida"
         if (!VerificarPassword(user, request.CurrentPassword ?? ""))
             return BadRequest(new { message = "La contraseña actual es incorrecta" });
 
@@ -187,8 +181,6 @@ public class AuthController : ControllerBase
 
     // ---------- Diagnóstico de mail (solo Admin) ----------
 
-    // Manda un mail de prueba al email del Admin logueado y devuelve lo que respondió Brevo.
-    // Sirve para saber por qué no llegan los códigos, sin tener que mirar los logs de Render.
     [HttpPost("test-email")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TestEmail()
@@ -221,16 +213,13 @@ public class AuthController : ControllerBase
         if (channel != "email" && NormalizarTelefono(request.Phone) == null)
             return BadRequest(new { message = "Ingresá un número de teléfono válido, con código de país" });
 
-        // Siempre la misma respuesta, exista o no el usuario (no revelamos qué datos están registrados)
         var respuesta = Ok(new { message = "Si los datos son correctos, te enviamos un código." });
 
-        // Email: se busca por email. SMS/WhatsApp: se busca por el teléfono guardado.
         var user = channel == "email"
             ? await BuscarUsuarioAsync(request.Email, null)
             : await BuscarUsuarioAsync(null, request.Phone);
         if (user == null) return respuesta;
 
-        // Máximo un código por minuto
         var ultimo = await _context.PasswordResetCodes
             .Where(c => c.UserId == user.Id)
             .OrderByDescending(c => c.CreatedAt)
@@ -238,7 +227,6 @@ public class AuthController : ControllerBase
         if (ultimo != null && ultimo.CreatedAt > DateTime.UtcNow.AddSeconds(-60))
             return respuesta;
 
-        // El código va SIEMPRE al teléfono guardado del usuario, no al que escribió quien lo pide
         string? telefonoDestino = null;
         if (channel != "email")
         {
@@ -246,7 +234,6 @@ public class AuthController : ControllerBase
             if (telefonoDestino == null) return respuesta;
         }
 
-        // Invalida los códigos anteriores
         var anteriores = await _context.PasswordResetCodes
             .Where(c => c.UserId == user.Id && !c.Used)
             .ToListAsync();
@@ -263,7 +250,6 @@ public class AuthController : ControllerBase
         });
         await _context.SaveChangesAsync();
 
-        // Solo en desarrollo: muestra el código en la consola para probar sin proveedores
         if (_env.IsDevelopment())
             _logger.LogInformation("Código de recuperación para {Email}: {Code}", user.Email, code);
 
@@ -294,7 +280,6 @@ public class AuthController : ControllerBase
         return respuesta;
     }
 
-    // Comprueba que el código sea válido (sin consumirlo)
     [HttpPost("verify-reset-code")]
     [EnableRateLimiting("auth")]
     public async Task<IActionResult> VerifyResetCode(VerifyCodeRequest request)
@@ -337,7 +322,6 @@ public class AuthController : ControllerBase
         var buscado = NormalizarParaComparar(phone);
         if (buscado == null) return null;
 
-        // Pocos usuarios: comparamos en memoria para tolerar distintos formatos guardados
         var candidatos = await _context.Users.Where(u => u.Telefono != null).ToListAsync();
         return candidatos.FirstOrDefault(u => NormalizarParaComparar(u.Telefono) == buscado);
     }
@@ -364,7 +348,6 @@ public class AuthController : ControllerBase
         return (user, registro);
     }
 
-    // Acepta contraseñas con hash y, por compatibilidad, las que todavía están en texto plano
     private static bool VerificarPassword(User user, string plano)
     {
         if (user.Password.StartsWith("$2"))
@@ -379,7 +362,6 @@ public class AuthController : ControllerBase
         return false;
     }
 
-    // Formato internacional: "+54 9 381 123-4567" -> "+5493811234567"
     private static string? NormalizarTelefono(string? tel)
     {
         if (string.IsNullOrWhiteSpace(tel)) return null;
@@ -387,7 +369,6 @@ public class AuthController : ControllerBase
         return limpio.StartsWith("+") && limpio.Length >= 10 ? limpio : null;
     }
 
-    // Para comparar: en celulares argentinos ignora el 9 (+549... == +54...)
     private static string? NormalizarParaComparar(string? tel)
     {
         var t = NormalizarTelefono(tel);
@@ -402,34 +383,4 @@ public class AuthController : ControllerBase
   <p style=""font-size:32px;letter-spacing:8px;font-weight:bold;margin:20px 0"">{code}</p>
   <p style=""color:#666"">Vence en 10 minutos. Si no lo pediste vos, ignorá este mensaje.</p>
 </div>";
-
-    private string GenerarToken(User user)
-    {
-        var jwtKey = _configuration["Jwt:Key"]!;
-        var jwtIssuer = _configuration["Jwt:Issuer"]!;
-        var jwtAudience = _configuration["Jwt:Audience"]!;
-        var horas = double.Parse(_configuration["Jwt:ExpiraEnHoras"] ?? "8", CultureInfo.InvariantCulture);
-
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("firstName", user.FirstName),
-            new Claim("lastName", user.LastName),
-        };
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: jwtIssuer,
-            audience: jwtAudience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddHours(horas),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
 }

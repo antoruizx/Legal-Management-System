@@ -1,3 +1,4 @@
+using LegalManagementSystem.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +23,12 @@ public class DesignTimeDbContextFactory
 
         optionsBuilder.UseNpgsql(connectionString);
 
-        return new ApplicationDbContext(optionsBuilder.Options);
+        return new ApplicationDbContext(optionsBuilder.Options, new SinTenant());
+    }
+
+    // Al generar migraciones no hay ningún usuario logueado: sin tenant, el filtro no aplica.
+    private class SinTenant : ICurrentTenantService
+    {
+        public int? TenantId => null;
     }
 }

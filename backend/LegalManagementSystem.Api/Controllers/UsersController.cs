@@ -57,7 +57,8 @@ public class UsersController : ControllerBase
 
         var email = request.Email.Trim();
         var emailLower = email.ToLowerInvariant();
-        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == emailLower))
+        // El email es único en TODA la app, no solo en este estudio
+        if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email.ToLower() == emailLower))
             return BadRequest(new { message = "Ya existe un usuario con ese email" });
 
         var user = new User
@@ -95,7 +96,7 @@ public class UsersController : ControllerBase
 
         var email = request.Email.Trim();
         var emailLower = email.ToLowerInvariant();
-        if (await _context.Users.AnyAsync(u => u.Id != id && u.Email.ToLower() == emailLower))
+        if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Id != id && u.Email.ToLower() == emailLower))
             return BadRequest(new { message = "Ya existe un usuario con ese email" });
 
         user.FirstName = request.FirstName.Trim();

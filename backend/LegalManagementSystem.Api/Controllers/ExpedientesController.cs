@@ -84,17 +84,15 @@ public class ExpedientesController : ControllerBase
         var numeroRepetido = await _context.Expedientes.AnyAsync(e => e.Numero == expediente.Numero && e.Id != id);
         if (numeroRepetido) return BadRequest($"Ya existe un expediente con el código \"{expediente.Numero}\". Elegí uno distinto.");
 
-        _context.Entry(expediente).State = EntityState.Modified;
+        // Se busca primero (con el filtro de tenant) para no pisar un expediente de otro estudio
+        var existente = await _context.Expedientes.FindAsync(id);
+        if (existente == null) return NotFound();
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!_context.Expedientes.Any(e => e.Id == id)) return NotFound();
-            throw;
-        }
+        var clienteExiste = await _context.Clientes.AnyAsync(c => c.Id == expediente.ClienteId);
+        if (!clienteExiste) return BadRequest($"No existe un cliente con id {expediente.ClienteId}");
+
+        _context.Entry(existente).CurrentValues.SetValues(expediente);
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }

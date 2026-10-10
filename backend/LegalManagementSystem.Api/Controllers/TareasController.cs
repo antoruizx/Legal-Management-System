@@ -84,17 +84,18 @@ public class TareasController : ControllerBase
     {
         if (id != tarea.Id) return BadRequest("El id de la ruta no coincide con el del body");
 
-        _context.Entry(tarea).State = EntityState.Modified;
+        // Se busca primero (con el filtro de tenant) para no pisar una tarea de otro estudio
+        var existente = await _context.Tareas.FindAsync(id);
+        if (existente == null) return NotFound();
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!_context.Tareas.Any(t => t.Id == id)) return NotFound();
-            throw;
-        }
+        var expedienteExiste = await _context.Expedientes.AnyAsync(e => e.Id == tarea.ExpedienteId);
+        if (!expedienteExiste) return BadRequest($"No existe un expediente con id {tarea.ExpedienteId}");
+
+        var userExiste = await _context.Users.AnyAsync(u => u.Id == tarea.UserId);
+        if (!userExiste) return BadRequest($"No existe un usuario responsable con id {tarea.UserId}");
+
+        _context.Entry(existente).CurrentValues.SetValues(tarea);
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }

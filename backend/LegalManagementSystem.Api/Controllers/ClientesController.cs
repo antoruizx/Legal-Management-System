@@ -50,17 +50,12 @@ public class ClientesController : ControllerBase
     {
         if (id != cliente.Id) return BadRequest("El id de la ruta no coincide con el del body");
 
-        _context.Entry(cliente).State = EntityState.Modified;
+        // Se busca primero (con el filtro de tenant) para no pisar un cliente de otro estudio
+        var existente = await _context.Clientes.FindAsync(id);
+        if (existente == null) return NotFound();
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!_context.Clientes.Any(c => c.Id == id)) return NotFound();
-            throw;
-        }
+        _context.Entry(existente).CurrentValues.SetValues(cliente);
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }
