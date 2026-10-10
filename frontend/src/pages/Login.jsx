@@ -47,6 +47,8 @@ export default function Login() {
         setError("No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.");
       } else if (err.response.status === 401) {
         setError("Email o contraseña incorrectos");
+      } else if (err.response.status === 403) {
+        setError(err.response.data?.message || "Tu estudio está desactivado.");
       } else if (err.response.status === 429) {
         setError("Demasiados intentos. Esperá un minuto y volvé a probar.");
       } else {
@@ -111,6 +113,10 @@ export default function Login() {
 
             <Link to="/forgot-password" className="login-link">
               ¿Olvidaste tu contraseña?
+            </Link>
+
+            <Link to="/registro" className="login-link">
+              ¿Tu estudio no tiene cuenta? Registralo
             </Link>
           </form>
         </div>

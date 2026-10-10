@@ -23,7 +23,7 @@ public class TokenService : ITokenService
         var jwtAudience = _configuration["Jwt:Audience"]!;
         var horas = double.Parse(_configuration["Jwt:ExpiraEnHoras"] ?? "8", CultureInfo.InvariantCulture);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
@@ -32,6 +32,9 @@ public class TokenService : ITokenService
             new Claim("lastName", user.LastName),
             new Claim("tenantId", user.TenantId.ToString()),
         };
+
+        if (EsSuperAdmin(user))
+            claims.Add(new Claim("superAdmin", "true"));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -45,5 +48,15 @@ public class TokenService : ITokenService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    // Los superadmins no se guardan en la base: SuperAdmin:Emails es una lista de emails
+    // separados por coma (en producción, variable de entorno SuperAdmin__Emails).
+    // OJO: tiene que ser el email de una cuenta que ya exista; si no, cualquiera podría registrarlo.
+    public bool EsSuperAdmin(User user)
+    {
+        var emails = (_configuration["SuperAdmin:Emails"] ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return emails.Contains(user.Email.Trim(), StringComparer.OrdinalIgnoreCase);
     }
 }

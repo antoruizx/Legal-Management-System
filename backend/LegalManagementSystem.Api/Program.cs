@@ -56,7 +56,11 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Panel de estudios: solo quienes tienen el claim que pone TokenService según SuperAdmin:Emails
+    options.AddPolicy("SuperAdmin", policy => policy.RequireClaim("superAdmin", "true"));
+});
 // --- Fin configuración de JWT ---
 
 builder.Services.AddCors(options =>

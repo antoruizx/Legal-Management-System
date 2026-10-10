@@ -86,6 +86,10 @@ public class AuthController : ControllerBase
         await _context.SaveChangesAsync();
 
         var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId);
+        // Se chequea después de validar la contraseña: así no revela nada a quien no es del estudio
+        if (tenant == null || !tenant.Active)
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Tu estudio está desactivado. Contactá al soporte." });
+
         var token = _tokenService.GenerarToken(user);
 
         return Ok(new
@@ -99,7 +103,8 @@ public class AuthController : ControllerBase
             telefono = user.Telefono,
             avatarUrl = user.AvatarUrl,
             tenantId = user.TenantId,
-            tenantName = tenant?.Name,
+            tenantName = tenant.Name,
+            esSuperAdmin = _tokenService.EsSuperAdmin(user),
             puedeEditarClientes = user.PuedeEditarClientes,
             puedeEliminarClientes = user.PuedeEliminarClientes,
             puedeEditarExpedientes = user.PuedeEditarExpedientes,

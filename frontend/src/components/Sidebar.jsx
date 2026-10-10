@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import Icon from "./Icon";
+import { useAuth } from "../context/AuthContext";
 
 const WHATSAPP_NUMERO = "5493814988682";
 
@@ -78,9 +79,20 @@ function armarLinkWhatsapp(nombreFuncion) {
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`;
 }
 
+// Los estudios no tienen logo propio: se muestran las iniciales de las dos primeras palabras del nombre
+function inicialesDe(nombre) {
+  return nombre
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((palabra) => palabra[0].toUpperCase())
+    .join("");
+}
+
 export default function Sidebar({ open, onClose }) {
   const linkClass = ({ isActive }) => `sidebar-link${isActive ? " active" : ""}`;
   const [funcionSeleccionada, setFuncionSeleccionada] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     function handleAbrirModal(e) {
@@ -98,14 +110,22 @@ export default function Sidebar({ open, onClose }) {
       <div className={`sidebar-overlay${open ? " visible" : ""}`} onClick={onClose} />
       <div className={`sidebar${open ? " open" : ""}`}>
         <div className="sidebar-brand">
-          <img src="/jp-estudio-juridico-logo.png" alt="Logo JP Estudio Jurídico" />
+          {user?.tenantName ? (
+            <div className="sidebar-brand-iniciales" aria-hidden="true">{inicialesDe(user.tenantName)}</div>
+          ) : (
+            <img src="/jp-estudio-juridico-logo.png" alt="Logo JP Estudio Jurídico" />
+          )}
           <span>Legal Management System</span>
         </div>
+        {user?.tenantName && <div className="sidebar-label">{user.tenantName}</div>}
 
         <NavLink to="/dashboard" className={linkClass} onClick={onClose}><Icon name="home" /> Dashboard</NavLink>
         <NavLink to="/clientes" className={linkClass} onClick={onClose}><Icon name="users" /> Clientes</NavLink>
         <NavLink to="/expedientes" className={linkClass} onClick={onClose}><Icon name="folder" /> Expedientes</NavLink>
         <NavLink to="/tareas" className={linkClass} onClick={onClose}><Icon name="tasks" /> Tareas</NavLink>
+        {user?.esSuperAdmin && (
+          <NavLink to="/estudios" className={linkClass} onClick={onClose}><Icon name="wallet" /> Estudios</NavLink>
+        )}
 
         <hr className="sidebar-divider" />
         <div className="sidebar-label">Funciones adicionales</div>

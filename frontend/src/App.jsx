@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import MainLayout from "./layouts/MainLayout";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
+import RegistroEstudio from "./pages/RegistroEstudio";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import ClienteForm from "./pages/ClienteForm";
@@ -16,6 +17,7 @@ import TareaForm from "./pages/TareaForm";
 import TareaDetalle from "./pages/TareaDetalle";
 import MiPerfil from "./pages/MiPerfil";
 import ConfiguracionUsuarios from "./pages/ConfiguracionUsuarios";
+import Estudios from "./pages/Estudios";
 import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
@@ -27,6 +29,7 @@ function App() {
             {/* Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/registro" element={<RegistroEstudio />} />
 
             {/* Rutas protegidas */}
             <Route
@@ -51,6 +54,7 @@ function App() {
               <Route path="/tareas/:id" element={<TareaDetalle />} />
               <Route path="/mi-perfil" element={<MiPerfil />} />
               <Route path="/configuracion-usuarios" element={<ConfiguracionUsuarios />} />
+              <Route path="/estudios" element={<Estudios />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
