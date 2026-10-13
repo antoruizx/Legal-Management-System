@@ -18,6 +18,9 @@ import TareaDetalle from "./pages/TareaDetalle";
 import MiPerfil from "./pages/MiPerfil";
 import ConfiguracionUsuarios from "./pages/ConfiguracionUsuarios";
 import Estudios from "./pages/Estudios";
+import Calendario from "./pages/Calendario";
+import Historial from "./pages/Historial";
+import Metricas from "./pages/Metricas";
 import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
@@ -52,6 +55,9 @@ function App() {
               <Route path="/tareas/nuevo" element={<TareaForm />} />
               <Route path="/tareas/:id/editar" element={<TareaForm />} />
               <Route path="/tareas/:id" element={<TareaDetalle />} />
+              <Route path="/calendario" element={<Calendario />} />
+              <Route path="/historial" element={<Historial />} />
+              <Route path="/metricas" element={<Metricas />} />
               <Route path="/mi-perfil" element={<MiPerfil />} />
               <Route path="/configuracion-usuarios" element={<ConfiguracionUsuarios />} />
               <Route path="/estudios" element={<Estudios />} />

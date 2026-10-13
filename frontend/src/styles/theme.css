@@ -1411,3 +1411,161 @@ a {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---------- Calendario ---------- */
+.cal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cal-mes { text-transform: capitalize; }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.cal-dia-nombre {
+  color: var(--text-lo);
+  text-align: center;
+  font-size: 12px;
+}
+
+.cal-celda {
+  min-height: 84px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 4px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.cal-celda.vacia { border: 0; }
+
+.cal-celda.hoy {
+  border-color: var(--color-primary-soft);
+  background: var(--color-primary-light);
+}
+
+.cal-celda b {
+  font-size: 12px;
+  color: var(--text-lo);
+}
+
+.cal-chip {
+  display: block;
+  width: 100%;
+  border: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  text-align: left;
+  border-radius: 5px;
+  padding: 1px 5px;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  color: #0E131B;
+}
+
+.cal-chip.pendiente { background: #FDBA74; }
+.cal-chip.vencida { background: #FDA4AF; }
+.cal-chip.hecha { background: #5EEAD4; }
+
+/* ---------- Métricas ---------- */
+.metricas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.bar-label {
+  width: 90px;
+  flex-shrink: 0;
+  color: var(--text-lo);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  flex: 1;
+  min-width: 0;
+}
+
+.bar-track i {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  min-width: 2px;
+}
+
+.donut-wrap {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.donut {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.donut div {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.cols-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 140px;
+}
+
+.cols-col {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  color: var(--text-lo);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.cols-col i {
+  display: block;
+  background: linear-gradient(#60A5FA, #2563EB);
+  border-radius: 6px 6px 0 0;
+  margin-bottom: 4px;
+  min-height: 2px;
+}

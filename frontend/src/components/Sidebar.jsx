@@ -109,6 +109,9 @@ export default function Sidebar({ open, onClose }) {
         <NavLink to="/clientes" className={linkClass} onClick={onClose}><Icon name="users" /> Clientes</NavLink>
         <NavLink to="/expedientes" className={linkClass} onClick={onClose}><Icon name="folder" /> Expedientes</NavLink>
         <NavLink to="/tareas" className={linkClass} onClick={onClose}><Icon name="tasks" /> Tareas</NavLink>
+        <NavLink to="/calendario" className={linkClass} onClick={onClose}><Icon name="calendar" /> Calendario</NavLink>
+        <NavLink to="/historial" className={linkClass} onClick={onClose}><Icon name="clock" /> Historial</NavLink>
+        <NavLink to="/metricas" className={linkClass} onClick={onClose}><Icon name="chart" /> Métricas</NavLink>
         {user?.esSuperAdmin && (
           <NavLink to="/estudios" className={linkClass} onClick={onClose}><Icon name="wallet" /> Estudios</NavLink>
         )}
