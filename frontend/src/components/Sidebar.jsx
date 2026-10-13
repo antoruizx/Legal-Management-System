@@ -79,16 +79,6 @@ function armarLinkWhatsapp(nombreFuncion) {
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`;
 }
 
-// Los estudios no tienen logo propio: se muestran las iniciales de las dos primeras palabras del nombre
-function inicialesDe(nombre) {
-  return nombre
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((palabra) => palabra[0].toUpperCase())
-    .join("");
-}
-
 export default function Sidebar({ open, onClose }) {
   const linkClass = ({ isActive }) => `sidebar-link${isActive ? " active" : ""}`;
   const [funcionSeleccionada, setFuncionSeleccionada] = useState(null);
@@ -110,12 +100,8 @@ export default function Sidebar({ open, onClose }) {
       <div className={`sidebar-overlay${open ? " visible" : ""}`} onClick={onClose} />
       <div className={`sidebar${open ? " open" : ""}`}>
         <div className="sidebar-brand">
-          {user?.tenantName ? (
-            <div className="sidebar-brand-iniciales" aria-hidden="true">{inicialesDe(user.tenantName)}</div>
-          ) : (
-            <img src="/jp-estudio-juridico-logo.png" alt="Logo JP Estudio Jurídico" />
-          )}
-          <span>Legal Management System</span>
+          <img src="/foja-icono.svg" alt="" />
+          <span>Foja</span>
         </div>
         {user?.tenantName && <div className="sidebar-label">{user.tenantName}</div>}
 

@@ -135,7 +135,7 @@ export default function Dashboard() {
         <p className="empty-state">No se pudo cargar el resumen. Probá recargar la página.</p>
       ) : (
         <>
-          <div className="card kpi-row">
+          <div className="kpi-row">
             <StatCard
               icon="folder"
               label="Expedientes activos"

@@ -332,7 +332,7 @@ export default function ExpedienteDetalle() {
                     width: 10,
                     height: 10,
                     borderRadius: "50%",
-                    background: "var(--primary, #6366f1)",
+                    background: "var(--card-top)",
                   }}
                 ></span>
                 <div className="timeline-title" style={{ fontWeight: 600 }}>{m.tipo}</div>
