@@ -14,7 +14,7 @@ const OPTIONS = {
   background: { color: "transparent" },
   particles: {
     number: { value: 65, density: { enable: true } },
-    color: { value: ["#60A5FA", "#22D3EE", "#818CF8"] },
+    color: { value: ["#A594F9", "#F4845F", "#7DA6FF"] },
     opacity: { value: { min: 0.25, max: 0.8 } },
     size: { value: { min: 1, max: 3 } },
     move: {
@@ -26,7 +26,7 @@ const OPTIONS = {
     links: {
       enable: true,
       distance: 140,
-      color: "#60A5FA",
+      color: "#A594F9",
       opacity: 0.22,
       width: 1,
     },

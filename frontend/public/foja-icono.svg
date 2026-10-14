@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="30" fill="#2563EB"/>
-  <rect x="46" y="40" width="46" height="70" rx="5" fill="#BFDBFE"/>
-  <path d="M54 30 H82 L98 46 V102 H54 Z" fill="#EFF6FF"/>
-  <path d="M82 30 V46 H98 Z" fill="#BFDBFE"/>
-  <rect x="62" y="56" width="14" height="5" rx="2.5" fill="#2563EB"/>
-  <rect x="62" y="67" width="28" height="5" rx="2.5" fill="#2563EB"/>
-  <rect x="62" y="78" width="28" height="5" rx="2.5" fill="#2563EB"/>
-  <rect x="62" y="89" width="28" height="5" rx="2.5" fill="#2563EB"/>
+  <rect width="128" height="128" rx="30" fill="#5B3FD9"/>
+  <rect x="46" y="40" width="46" height="70" rx="5" fill="#C9BEFA"/>
+  <path d="M54 30 H82 L98 46 V102 H54 Z" fill="#FFFFFF"/>
+  <path d="M82 30 V46 H98 Z" fill="#C9BEFA"/>
+  <rect x="62" y="56" width="14" height="5" rx="2.5" fill="#F4845F"/>
+  <rect x="62" y="67" width="28" height="5" rx="2.5" fill="#5B3FD9"/>
+  <rect x="62" y="78" width="28" height="5" rx="2.5" fill="#5B3FD9"/>
+  <rect x="62" y="89" width="28" height="5" rx="2.5" fill="#5B3FD9"/>
 </svg>

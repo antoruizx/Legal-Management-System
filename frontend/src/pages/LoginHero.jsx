@@ -11,7 +11,7 @@ function LoginHero() {
       <ParticlesBg />
 
       <div className="login-hero-content">
-        <h1>Gestioná tu estudio jurídico en un solo lugar</h1>
+        <h1>Gestioná tu estudio jurídico <span className="texto-degrade">en un solo lugar.</span></h1>
         <p>
           Clientes, expedientes y tareas organizados, con vencimientos y estados
           siempre a la vista.

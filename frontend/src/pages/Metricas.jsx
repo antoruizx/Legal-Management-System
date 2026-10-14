@@ -7,7 +7,7 @@ import { getMovimientosPorExpediente } from "../api/movimientosApi";
 const MESES_ACTIVIDAD = 6;
 
 // Colores de las barras de "Expedientes por estado"
-const COLORES_BARRAS = ["#60A5FA", "#22D3EE", "#818CF8", "#2DD4BF", "#FBBF24"];
+const COLORES_BARRAS = ["#5B3FD9", "#F4845F", "#2F6BEA", "#12996A", "#F5B93A"];
 
 function kpi(valor, etiqueta) {
   return (
