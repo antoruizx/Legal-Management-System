@@ -1,5 +1,6 @@
 using LegalManagementSystem.Api.Data;
 using LegalManagementSystem.Api.Models;
+using LegalManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,10 +19,12 @@ public class DemoController : ControllerBase
     private const string Dominio = "@ejemplo.foja";
 
     private readonly ApplicationDbContext _context;
+    private readonly IAlmacenamientoArchivos _almacenamiento;
 
-    public DemoController(ApplicationDbContext context)
+    public DemoController(ApplicationDbContext context, IAlmacenamientoArchivos almacenamiento)
     {
         _context = context;
+        _almacenamiento = almacenamiento;
     }
 
     private int UsuarioActualId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -247,12 +250,8 @@ public class DemoController : ControllerBase
         var idsExpedientes = expedientes.Select(e => e.Id).ToList();
 
         var documentos = await _context.Documentos.Where(d => idsExpedientes.Contains(d.ExpedienteId)).ToListAsync();
-        var carpeta = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
         foreach (var d in documentos)
-        {
-            var ruta = Path.Combine(carpeta, d.NombreArchivoInterno);
-            if (System.IO.File.Exists(ruta)) System.IO.File.Delete(ruta);
-        }
+            await _almacenamiento.BorrarAsync(d.NombreArchivoInterno);
         _context.Documentos.RemoveRange(documentos);
 
         _context.Tareas.RemoveRange(await _context.Tareas.Where(t => idsExpedientes.Contains(t.ExpedienteId)).ToListAsync());

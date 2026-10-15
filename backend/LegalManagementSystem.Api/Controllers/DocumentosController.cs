@@ -1,5 +1,6 @@
 using LegalManagementSystem.Api.Data;
 using LegalManagementSystem.Api.Models;
+using LegalManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
@@ -12,14 +13,12 @@ namespace LegalManagementSystem.Api.Controllers;
 public class DocumentosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly string _uploadsFolder;
+    private readonly IAlmacenamientoArchivos _almacenamiento;
 
-    public DocumentosController(ApplicationDbContext context)
+    public DocumentosController(ApplicationDbContext context, IAlmacenamientoArchivos almacenamiento)
     {
         _context = context;
-        _uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
-        if (!Directory.Exists(_uploadsFolder))
-            Directory.CreateDirectory(_uploadsFolder);
+        _almacenamiento = almacenamiento;
     }
 
     [HttpGet]
@@ -41,12 +40,12 @@ public class DocumentosController : ControllerBase
 
         if (file == null || file.Length == 0) return BadRequest("Archivo inválido");
 
-        var nombreInterno = $"{Guid.NewGuid()}_{file.FileName}";
-        var rutaCompleta = Path.Combine(_uploadsFolder, nombreInterno);
+        // Path.GetFileName: el nombre que manda el navegador no puede traer carpetas
+        var nombreInterno = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
 
-        using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+        await using (var stream = file.OpenReadStream())
         {
-            await file.CopyToAsync(stream);
+            await _almacenamiento.GuardarAsync(nombreInterno, stream, file.ContentType);
         }
 
         var documento = new Documento
@@ -70,11 +69,10 @@ public class DocumentosController : ControllerBase
         var documento = await _context.Documentos.FindAsync(id);
         if (documento == null) return NotFound();
 
-        var rutaCompleta = Path.Combine(_uploadsFolder, documento.NombreArchivoInterno);
-        if (!System.IO.File.Exists(rutaCompleta)) return NotFound("El archivo no se encuentra en el servidor");
+        var stream = await _almacenamiento.AbrirAsync(documento.NombreArchivoInterno);
+        if (stream == null) return NotFound("El archivo no se encuentra en el servidor");
 
-        var bytes = await System.IO.File.ReadAllBytesAsync(rutaCompleta);
-        return File(bytes, documento.TipoContenido, documento.NombreOriginal);
+        return File(stream, documento.TipoContenido, documento.NombreOriginal);
     }
 
     [HttpDelete("{id}")]
@@ -83,9 +81,7 @@ public class DocumentosController : ControllerBase
         var documento = await _context.Documentos.FindAsync(id);
         if (documento == null) return NotFound();
 
-        var rutaCompleta = Path.Combine(_uploadsFolder, documento.NombreArchivoInterno);
-        if (System.IO.File.Exists(rutaCompleta))
-            System.IO.File.Delete(rutaCompleta);
+        await _almacenamiento.BorrarAsync(documento.NombreArchivoInterno);
 
         _context.Documentos.Remove(documento);
         await _context.SaveChangesAsync();
