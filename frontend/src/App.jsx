@@ -18,6 +18,7 @@ import TareaDetalle from "./pages/TareaDetalle";
 import MiPerfil from "./pages/MiPerfil";
 import ConfiguracionUsuarios from "./pages/ConfiguracionUsuarios";
 import Estudios from "./pages/Estudios";
+import Honorarios from "./pages/Honorarios";
 import Calendario from "./pages/Calendario";
 import Historial from "./pages/Historial";
 import Metricas from "./pages/Metricas";
@@ -55,6 +56,7 @@ function App() {
               <Route path="/tareas/nuevo" element={<TareaForm />} />
               <Route path="/tareas/:id/editar" element={<TareaForm />} />
               <Route path="/tareas/:id" element={<TareaDetalle />} />
+              <Route path="/honorarios" element={<Honorarios />} />
               <Route path="/calendario" element={<Calendario />} />
               <Route path="/historial" element={<Historial />} />
               <Route path="/metricas" element={<Metricas />} />

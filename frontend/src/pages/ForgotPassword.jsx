@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import Logo from "../components/Logo";
-import LoginHero from "./LoginHero";
+import AuthLayout from "../components/AuthLayout";
 
 const CANALES = [
   { id: "email", label: "Email" },
@@ -169,13 +168,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="login-screen">
-      <div className="login-panel">
-        <div className="login-card">
-          <div className="login-logo">
-            <Logo />
-          </div>
-
+    <AuthLayout>
           {error && <div className="login-error">{error}</div>}
           {info && <div className="login-info">{info}</div>}
 
@@ -379,10 +372,6 @@ export default function ForgotPassword() {
               ← Volver al inicio de sesión
             </Link>
           )}
-        </div>
-      </div>
-
-      <LoginHero />
-    </div>
+    </AuthLayout>
   );
 }

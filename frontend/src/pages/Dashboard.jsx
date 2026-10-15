@@ -6,13 +6,8 @@ import { getExpedientes } from "../api/expedientesApi";
 import { getTareas } from "../api/tareasApi";
 import StatCard from "../components/StatCard";
 import AreaChart from "../components/AreaChart";
-
-// Datos de ejemplo: la API todavía no tiene audiencias ni honorarios.
-// Cuando existan los endpoints, reemplazar por la respuesta real.
-const DATOS_EJEMPLO = {
-  audienciasSemana: 3,
-  honorariosPendientes: 1250000,
-};
+import { diasParaVencer, getEstadoTarea } from "../utils/tareas";
+import { PENDIENTE_DE_COBRO, formatoPesos } from "../data/honorariosEjemplo";
 
 const MESES_GRAFICO = 6;
 
@@ -23,14 +18,15 @@ function saludoSegunHora() {
   return "Buenas noches";
 }
 
-function getEstadoTarea(tarea) {
-  const hoy = new Date();
-  const vencimiento = new Date(tarea.fechaVencimiento);
-  const diffDias = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
-
-  if (diffDias < 0) return { label: "Urgente", clase: "badge-danger", dot: "dot-danger" };
-  if (diffDias <= 3) return { label: "Próxima", clase: "badge-warning", dot: "dot-warning" };
-  return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
+// La API no tiene audiencias como entidad: se cuentan las tareas pendientes
+// que dicen "audiencia" en el título y vencen en los próximos 7 días.
+function audienciasDeLaSemana(tareas) {
+  return tareas
+    .filter((t) => {
+      const dias = diasParaVencer(t);
+      return !t.completada && /audiencia/i.test(t.titulo) && dias >= 0 && dias <= 7;
+    })
+    .sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento));
 }
 
 function esDelMesActual(fecha) {
@@ -117,6 +113,11 @@ export default function Dashboard() {
     .sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))
     .slice(0, 5);
 
+  const audiencias = audienciasDeLaSemana(tareas);
+  const proximaAudiencia = audiencias[0]
+    ? new Date(audiencias[0].fechaVencimiento).toLocaleDateString("es-AR", { weekday: "long", hour: "2-digit", minute: "2-digit", hour12: false })
+    : null;
+
   const serieExpedientes = expedientesPorMes(expedientes);
   const totalPeriodo = serieExpedientes.reduce((acc, m) => acc + m.value, 0);
 
@@ -145,9 +146,8 @@ export default function Dashboard() {
             <StatCard
               icon="calendar"
               label="Audiencias esta semana"
-              value={DATOS_EJEMPLO.audienciasSemana}
-              sub="Todavía sin datos reales"
-              ejemplo
+              value={audiencias.length}
+              sub={proximaAudiencia ? `La próxima: ${proximaAudiencia}` : "Sin audiencias agendadas"}
             />
             <StatCard
               icon="users"
@@ -158,8 +158,8 @@ export default function Dashboard() {
             <StatCard
               icon="wallet"
               label="Honorarios pendientes"
-              value={`$ ${DATOS_EJEMPLO.honorariosPendientes.toLocaleString("es-AR")}`}
-              sub="Todavía sin datos reales"
+              value={formatoPesos(PENDIENTE_DE_COBRO.monto)}
+              sub={`${PENDIENTE_DE_COBRO.clientes} clientes`}
               ejemplo
             />
           </div>
@@ -168,7 +168,7 @@ export default function Dashboard() {
             <div className="page-header" style={{ marginBottom: 0 }}>
               <div>
                 <h3 className="card-title">Expedientes iniciados por mes</h3>
-                <div className="card-caption">Últimos {MESES_GRAFICO} meses, según fecha de inicio</div>
+                <div className="card-caption">Últimos {MESES_GRAFICO} meses</div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div className="kpi-value" style={{ marginTop: 0 }}>{totalPeriodo}</div>
@@ -193,7 +193,7 @@ export default function Dashboard() {
             <div className="card">
               <div className="page-header" style={{ marginBottom: "12px" }}>
                 <h3 className="card-title">Próximos vencimientos</h3>
-                <Link to="/tareas" className="link-action">Ver todas las tareas →</Link>
+                <Link to="/tareas" className="link-action" style={{ color: "var(--link)", fontWeight: 600 }}>Ver todas →</Link>
               </div>
               <table className="data-table">
                 <thead>
@@ -214,7 +214,17 @@ export default function Dashboard() {
                             {t.titulo}
                           </Link>
                         </td>
-                        <td data-label="Expediente" style={{ color: "var(--text-lo)" }}>{t.expediente?.numero || "-"}</td>
+                        <td data-label="Expediente">
+                          {t.expediente ? (
+                            <Link
+                              to={`/expedientes/${t.expediente.id}`}
+                              style={{ color: "var(--link)", fontWeight: 600 }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {t.expediente.numero}
+                            </Link>
+                          ) : "-"}
+                        </td>
                         <td data-label="Vence">{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
                         <td data-label="Estado">
                           <span className={`badge ${estado.clase}`}>

@@ -181,14 +181,14 @@ export default function Navbar({ onToggleSidebar }) {
               <img
                 src={user.avatarUrl}
                 alt=""
-                style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", background: "var(--color-primary-light)" }}
+                style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", background: "var(--color-primary-light)" }}
               />
             ) : (
-              <span className="client-avatar" style={{ width: 28, height: 28, fontSize: 12 }}>
+              <span className="client-avatar" style={{ width: 36, height: 36, fontSize: 13 }}>
                 {iniciales(user?.firstName, user?.lastName)}
               </span>
             )}
-            {user?.firstName} <Icon name="chevronDown" size={14} />
+            <span style={{ fontWeight: 600 }}>{user?.firstName} {user?.lastName}</span>
           </button>
 
           {menuAbierto && (
@@ -200,7 +200,7 @@ export default function Navbar({ onToggleSidebar }) {
               </div>
               <button onClick={irAPerfil}>Mi perfil</button>
               {esAdmin && (
-                <button onClick={irAConfiguracionUsuarios}>Configuración de usuarios</button>
+                <button onClick={irAConfiguracionUsuarios}>Usuarios y permisos</button>
               )}
               <button onClick={handleLogout}>Cerrar sesión</button>
             </div>

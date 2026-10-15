@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getExpedientes, deleteExpediente } from "../api/expedientesApi";
-import BackButton from "../components/BackButton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { useAuth } from "../context/AuthContext";
 
@@ -73,13 +72,10 @@ export default function Expedientes() {
   return (
     <div>
     <div className="page-header">
-      <div>
-        <BackButton />
-        <h2>Expedientes</h2>
-      </div>
+      <h2>Expedientes</h2>
       {puedeEditar && (
         <Link to="/expedientes/nuevo">
-          <button className="btn btn-primary">+ Nuevo Expediente</button>
+          <button className="btn btn-primary">+ Nuevo expediente</button>
         </Link>
       )}
     </div>
@@ -105,7 +101,9 @@ export default function Expedientes() {
                   className="clickable-row"
                   onClick={() => navigate(`/expedientes/${e.id}`)}
                 >
-                  <td data-label="Código">{e.numero}</td>
+                  <td data-label="Código" style={{ whiteSpace: "nowrap" }}>
+                    <span className="link-strong">{e.numero}</span>
+                  </td>
                   <td data-label="Carátula" style={{ color: "var(--text-hi)", fontWeight: 500 }}>
                     {e.caratula}
                   </td>
@@ -131,7 +129,7 @@ export default function Expedientes() {
                   {(puedeEditar || puedeEliminar) && (
                     <td data-label="Acciones" onClick={(ev) => ev.stopPropagation()}>
                       {puedeEditar && (
-                        <Link to={`/expedientes/${e.id}/editar`} className="link-action">Editar</Link>
+                        <Link to={`/expedientes/${e.id}/editar`} className="link-strong">Editar</Link>
                       )}
                       {puedeEditar && puedeEliminar && " · "}
                       {puedeEliminar && (

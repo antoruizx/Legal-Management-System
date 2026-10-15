@@ -1,8 +1,12 @@
-export default function Logo() {
+// Marca sobre fondo oscuro. `grande` es la versión del login (ícono blanco).
+export default function Logo({ grande = false }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-      <img src="/foja-icono.svg" alt="" width="34" height="34" />
-      <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: "-1px" }}>Foja</h3>
+    <div className={`brand${grande ? " brand-grande" : ""}`}>
+      <img src={grande ? "/foja-icono-claro.svg" : "/foja-icono.svg"} alt="" />
+      <div>
+        <div className="brand-name">Foja</div>
+        <div className="brand-sub">Gestión jurídica</div>
+      </div>
     </div>
   );
 }

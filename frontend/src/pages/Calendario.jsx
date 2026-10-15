@@ -40,7 +40,8 @@ export default function Calendario() {
   // La semana arranca en lunes: getDay() devuelve 0 para domingo
   const huecos = (mes.getDay() + 6) % 7;
   const diasDelMes = new Date(anio, numeroMes + 1, 0).getDate();
-  const nombreMes = mes.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  const textoMes = mes.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  const nombreMes = textoMes.charAt(0).toUpperCase() + textoMes.slice(1);
 
   const cambiarMes = (delta) => setMes(new Date(anio, numeroMes + delta, 1));
 

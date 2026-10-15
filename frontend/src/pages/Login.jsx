@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../context/AuthContext";
-import Logo from "../components/Logo";
-import LoginHero from "./LoginHero";
+import AuthLayout from "../components/AuthLayout";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -60,15 +59,9 @@ export default function Login() {
   };
 
   return (
-    <div className="login-screen">
-      <div className="login-panel">
-        <div className="login-card">
-          <div className="login-logo">
-            <Logo />
-          </div>
-
+    <AuthLayout>
           <h2>Iniciar sesión</h2>
-          <p className="login-subtitle">Ingresá tus credenciales para acceder al estudio.</p>
+          <p className="login-subtitle">Ingresá con tu email para acceder a tu estudio.</p>
 
           {error && <div className="login-error">{error}</div>}
           {loading && lento && (
@@ -119,10 +112,6 @@ export default function Login() {
               ¿Tu estudio no tiene cuenta? Registralo
             </Link>
           </form>
-        </div>
-      </div>
-
-      <LoginHero />
-    </div>
+    </AuthLayout>
   );
 }

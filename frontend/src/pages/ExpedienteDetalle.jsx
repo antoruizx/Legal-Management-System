@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getExpediente, updateExpediente } from "../api/expedientesApi";
 import {
@@ -12,8 +12,11 @@ import {
   crearMovimiento,
   eliminarMovimiento,
 } from "../api/movimientosApi";
+import { updateTarea } from "../api/tareasApi";
 import BackButton from "../components/BackButton";
+import Icon from "../components/Icon";
 import { useAuth } from "../context/AuthContext";
+import { getEstadoTarea } from "../utils/tareas";
 
 const ESTADOS = ["Activo", "En trámite", "Cerrado", "Archivado"];
 const TIPOS_MOVIMIENTO = ["Presentación", "Notificación", "Audiencia", "Resolución", "Otro"];
@@ -21,33 +24,31 @@ const TIPOS_MOVIMIENTO = ["Presentación", "Notificación", "Audiencia", "Resolu
 function getEstadoBadge(estado) {
   switch (estado) {
     case "Activo":
-      return { clase: "badge-success", dot: "dot-success" };
+      return "badge-success";
     case "En trámite":
-      return { clase: "badge-info", dot: "dot-info" };
+      return "badge-info";
     case "Cerrado":
-      return { clase: "badge-danger", dot: "dot-danger" };
+      return "badge-danger";
     case "Archivado":
-      return { clase: "badge-warning", dot: "dot-warning" };
+      return "badge-warning";
     default:
-      return { clase: "badge-neutral", dot: "" };
+      return "badge-neutral";
   }
 }
 
-function formatFechaHora(fecha) {
-  return new Date(fecha).toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function formatFecha(fecha) {
+  return new Date(fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function formatFechaCorta(fecha) {
+  return new Date(fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
 }
 
 function formatFechaCreacion(fecha) {
   if (!fecha) return "-";
   const d = new Date(fecha);
   if (d.getFullYear() < 1900) return "-";
-  return d.toLocaleDateString();
+  return formatFecha(d);
 }
 
 export default function ExpedienteDetalle() {
@@ -66,14 +67,14 @@ export default function ExpedienteDetalle() {
   const [descripcionMov, setDescripcionMov] = useState("");
   const [guardandoMov, setGuardandoMov] = useState(false);
   const [errorMov, setErrorMov] = useState("");
+  const [mostrarFiltro, setMostrarFiltro] = useState(false);
   const [filtroDesde, setFiltroDesde] = useState("");
   const [filtroHasta, setFiltroHasta] = useState("");
 
   const [documentos, setDocumentos] = useState([]);
-  const [archivo, setArchivo] = useState(null);
-  const [descripcionDoc, setDescripcionDoc] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const [errorDoc, setErrorDoc] = useState("");
+  const inputArchivo = useRef(null);
 
   const cargarExpediente = () => {
     getExpediente(id)
@@ -106,7 +107,7 @@ export default function ExpedienteDetalle() {
       const payload = { ...expediente, estado: nuevoEstado };
       await updateExpediente(id, payload);
       setExpediente(payload);
-    } catch (err) {
+    } catch {
       alert("No se pudo actualizar el estado del expediente");
     } finally {
       setCambiandoEstado(false);
@@ -129,7 +130,7 @@ export default function ExpedienteDetalle() {
       setDescripcionMov("");
       setTipoMov(TIPOS_MOVIMIENTO[0]);
       cargarMovimientos(filtroDesde, filtroHasta);
-    } catch (err) {
+    } catch {
       setErrorMov("No se pudo registrar el movimiento.");
     } finally {
       setGuardandoMov(false);
@@ -141,13 +142,9 @@ export default function ExpedienteDetalle() {
     try {
       await eliminarMovimiento(movId);
       cargarMovimientos(filtroDesde, filtroHasta);
-    } catch (err) {
+    } catch {
       alert("No se pudo eliminar el evento");
     }
-  };
-
-  const handleFiltrar = () => {
-    cargarMovimientos(filtroDesde, filtroHasta);
   };
 
   const handleLimpiarFiltro = () => {
@@ -156,19 +153,27 @@ export default function ExpedienteDetalle() {
     cargarMovimientos();
   };
 
+  // Marcar una tarea como hecha también está permitido para todos
+  const handleToggleTarea = async (tarea) => {
+    try {
+      await updateTarea(tarea.id, { ...tarea, completada: !tarea.completada });
+      cargarExpediente();
+    } catch {
+      alert("No se pudo actualizar la tarea");
+    }
+  };
+
   const handleSubirDocumento = async (e) => {
-    e.preventDefault();
+    const archivo = e.target.files[0];
+    e.target.value = "";
     if (!archivo) return;
 
     setSubiendo(true);
     setErrorDoc("");
     try {
-      await subirDocumento(id, archivo, descripcionDoc);
-      setArchivo(null);
-      setDescripcionDoc("");
-      e.target.reset();
+      await subirDocumento(id, archivo);
       cargarDocumentos();
-    } catch (err) {
+    } catch {
       setErrorDoc("No se pudo subir el documento.");
     } finally {
       setSubiendo(false);
@@ -178,7 +183,7 @@ export default function ExpedienteDetalle() {
   const handleDescargarDocumento = async (docId, nombreOriginal) => {
     try {
       await descargarDocumento(docId, nombreOriginal);
-    } catch (err) {
+    } catch {
       alert("No se pudo descargar el documento");
     }
   };
@@ -188,7 +193,7 @@ export default function ExpedienteDetalle() {
     try {
       await eliminarDocumento(docId);
       cargarDocumentos();
-    } catch (err) {
+    } catch {
       alert("No se pudo eliminar el documento");
     }
   };
@@ -196,20 +201,18 @@ export default function ExpedienteDetalle() {
   if (error) return <p style={{ color: "var(--danger)" }}>{error}</p>;
   if (!expediente) return <p>Cargando...</p>;
 
-  const estadoBadge = getEstadoBadge(expediente.estado);
+  const tareas = [...(expediente.tareas || [])].sort(
+    (a, b) => a.completada - b.completada || new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento)
+  );
 
   return (
     <div>
-      <BackButton />
-
       <div className="detail-header">
         <div>
+          <BackButton />
           <div className="detail-title-row">
             <h2>{expediente.caratula}</h2>
-            <span className={`badge ${estadoBadge.clase}`}>
-              {estadoBadge.dot && <span className={`badge-dot ${estadoBadge.dot}`}></span>}
-              {expediente.estado}
-            </span>
+            <span className={`badge ${getEstadoBadge(expediente.estado)}`}>{expediente.estado}</span>
           </div>
           <div className="detail-subtitle">Expediente N.º {expediente.numero}</div>
         </div>
@@ -244,7 +247,7 @@ export default function ExpedienteDetalle() {
         </div>
         <div className="detail-field">
           <div className="detail-label">Fecha de inicio</div>
-          <div className="detail-value">{new Date(expediente.fechaInicio).toLocaleDateString()}</div>
+          <div className="detail-value">{formatFecha(expediente.fechaInicio)}</div>
         </div>
         <div className="detail-field">
           <div className="detail-label">Creado el</div>
@@ -260,188 +263,148 @@ export default function ExpedienteDetalle() {
         </div>
       </div>
 
-      <div className="detail-section card">
-        <h3>Historial general</h3>
-
-        {puedeEditar && (
-          <form onSubmit={handleCrearMovimiento} style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
-            <select className="btn" value={tipoMov} onChange={(e) => setTipoMov(e.target.value)}>
-              {TIPOS_MOVIMIENTO.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Descripción del movimiento"
-              value={descripcionMov}
-              onChange={(e) => setDescripcionMov(e.target.value)}
-              required
-              style={{
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-sm)",
-                padding: "8px 12px",
-                color: "var(--text-hi)",
-                fontSize: "13px",
-                flex: 1,
-                minWidth: "200px",
-              }}
-            />
-            <button type="submit" className="btn btn-primary" disabled={guardandoMov}>
-              {guardandoMov ? "Guardando..." : "Agregar al historial"}
+      <div className="two-cols">
+        <div className="card">
+          <div className="card-head">
+            <h3 className="card-title">Historial</h3>
+            <button className="link-action" onClick={() => setMostrarFiltro(!mostrarFiltro)}>
+              Filtrar por fecha
             </button>
-          </form>
-        )}
-
-        {errorMov && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{errorMov}</p>}
-
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            flexWrap: "wrap",
-            alignItems: "flex-end",
-            paddingBottom: "12px",
-            marginBottom: "12px",
-            borderBottom: "1px solid var(--border-subtle)",
-          }}
-        >
-          <div className="form-field" style={{ marginBottom: 0 }}>
-            <label style={{ fontSize: 12 }}>Desde</label>
-            <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
           </div>
-          <div className="form-field" style={{ marginBottom: 0 }}>
-            <label style={{ fontSize: 12 }}>Hasta</label>
-            <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
-          </div>
-          <button className="btn" onClick={handleFiltrar}>Filtrar</button>
-          {(filtroDesde || filtroHasta) && (
-            <button className="btn" onClick={handleLimpiarFiltro}>Limpiar filtro</button>
+
+          {puedeEditar && (
+            <form onSubmit={handleCrearMovimiento} className="inline-form">
+              <select className="btn" value={tipoMov} onChange={(e) => setTipoMov(e.target.value)}>
+                {TIPOS_MOVIMIENTO.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <input
+                className="input"
+                type="text"
+                placeholder="Descripción del movimiento"
+                value={descripcionMov}
+                onChange={(e) => setDescripcionMov(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn btn-primary" disabled={guardandoMov}>
+                {guardandoMov ? "Guardando..." : "Agregar"}
+              </button>
+            </form>
+          )}
+
+          {errorMov && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{errorMov}</p>}
+
+          {mostrarFiltro && (
+            <div className="inline-form" style={{ alignItems: "center" }}>
+              <span className="list-meta">Desde</span>
+              <input className="input" type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
+              <span className="list-meta">Hasta</span>
+              <input className="input" type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
+              <button className="btn" onClick={() => cargarMovimientos(filtroDesde, filtroHasta)}>Filtrar</button>
+              {(filtroDesde || filtroHasta) && (
+                <button className="btn" onClick={handleLimpiarFiltro}>Limpiar</button>
+              )}
+            </div>
+          )}
+
+          {movimientos.length > 0 ? (
+            movimientos.map((m) => (
+              <div className="timeline-row" key={m.id}>
+                <span className="timeline-dot"></span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700 }}>{m.tipo}</div>
+                  <div className="list-meta">
+                    {formatFecha(m.fecha)}
+                    {m.user ? ` · ${m.user.firstName} ${m.user.lastName}` : ""}
+                  </div>
+                  <div>{m.descripcion}</div>
+                </div>
+                {puedeEliminar && (
+                  <button className="btn-danger-ghost" onClick={() => handleEliminarMovimiento(m.id)}>
+                    Eliminar
+                  </button>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="empty-state">No hay eventos para mostrar en este rango.</p>
           )}
         </div>
 
-        {movimientos.length > 0 ? (
-          <div className="timeline">
-            {movimientos.map((m) => (
-              <div className="timeline-item" key={m.id} style={{ position: "relative", paddingLeft: 20 }}>
-                <span
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 6,
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    background: "var(--card-top)",
-                  }}
-                ></span>
-                <div className="timeline-title" style={{ fontWeight: 600 }}>{m.tipo}</div>
-                <div className="timeline-meta">{formatFechaHora(m.fecha)}</div>
-                <div style={{ fontSize: 12, color: "var(--text-lo)", marginBottom: 4 }}>
-                  Registrado por: {m.user ? `${m.user.firstName} ${m.user.lastName}` : "—"}
-                </div>
-                <div className="timeline-desc">{m.descripcion}</div>
-                {puedeEliminar && (
-                  <button
-                    className="btn-danger-ghost"
-                    style={{ fontSize: 12, padding: "2px 6px", marginTop: 4 }}
-                    onClick={() => handleEliminarMovimiento(m.id)}
-                  >
-                    Eliminar
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="empty-state">No hay eventos para mostrar en este rango.</p>
-        )}
-      </div>
-
-      <div className="detail-section card">
-        <h3>Tareas</h3>
-        {expediente.tareas && expediente.tareas.length > 0 ? (
-          expediente.tareas.map((t) => (
-            <Link to={`/tareas/${t.id}`} key={t.id} style={{ textDecoration: "none", color: "inherit" }}>
-              <div className="task-row">
-                <div>
-                  <div className="task-title">{t.titulo}</div>
-                  <div className="task-due">Vence: {new Date(t.fechaVencimiento).toLocaleDateString()}</div>
-                </div>
-                <span className={`badge ${t.completada ? "badge-success" : "badge-warning"}`}>
-                  <span className={`badge-dot ${t.completada ? "dot-success" : "dot-warning"}`}></span>
-                  {t.completada ? "Completada" : "Pendiente"}
-                </span>
-              </div>
-            </Link>
-          ))
-        ) : (
-          <p className="empty-state">No hay tareas cargadas todavía.</p>
-        )}
-      </div>
-
-      <div className="detail-section card">
-        <h3>
-          📎 Documentos {!puedeEditar && <span className="badge badge-neutral" style={{ marginLeft: 8 }}>Solo lectura</span>}
-        </h3>
-
-        {puedeEditar && (
-          <form onSubmit={handleSubirDocumento} style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
-            <input
-              type="file"
-              onChange={(e) => setArchivo(e.target.files[0])}
-              required
-              style={{ color: "var(--text-hi)", fontSize: "13px" }}
-            />
-            <input
-              type="text"
-              placeholder="Descripción (opcional)"
-              value={descripcionDoc}
-              onChange={(e) => setDescripcionDoc(e.target.value)}
-              style={{
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-sm)",
-                padding: "8px 12px",
-                color: "var(--text-hi)",
-                fontSize: "13px",
-                flex: 1,
-                minWidth: "160px",
-              }}
-            />
-            <button type="submit" className="btn btn-primary" disabled={subiendo}>
-              {subiendo ? "Subiendo..." : "Subir documento"}
-            </button>
-          </form>
-        )}
-
-        {errorDoc && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{errorDoc}</p>}
-
-        {documentos.length > 0 ? (
-          documentos.map((d) => (
-            <div className="task-row" key={d.id}>
-              <div>
-                <div className="task-title">📄 {d.nombreOriginal}</div>
-                <div className="task-due">
-                  {d.descripcion ? `${d.descripcion} · ` : ""}
-                  Subido el {new Date(d.fechaSubida).toLocaleDateString()}
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <button className="link-action" onClick={() => handleDescargarDocumento(d.id, d.nombreOriginal)}>
-                  Descargar
-                </button>
-                {puedeEliminar && (
-                  <button className="btn-danger-ghost" onClick={() => handleEliminarDocumento(d.id)}>
-                    Eliminar
-                  </button>
-                )}
-              </div>
+        <div className="col-stack">
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">Tareas</h3>
+              <Link to="/tareas/nuevo" className="link-strong">+ Nueva</Link>
             </div>
-          ))
-        ) : (
-          <p className="empty-state">No hay documentos adjuntos todavía.</p>
-        )}
+
+            {tareas.length > 0 ? (
+              tareas.map((t) => {
+                const estado = getEstadoTarea(t);
+                return (
+                  <div className="list-row" key={t.id}>
+                    <input
+                      type="checkbox"
+                      checked={t.completada}
+                      onChange={() => handleToggleTarea(t)}
+                      aria-label={`Marcar "${t.titulo}" como ${t.completada ? "pendiente" : "hecha"}`}
+                    />
+                    <Link to={`/tareas/${t.id}`} className={`list-main${t.completada ? " hecha" : ""}`}>
+                      {t.titulo}
+                    </Link>
+                    <span className="list-meta">{formatFechaCorta(t.fechaVencimiento)}</span>
+                    <span className={`badge ${estado.clase}`}>{t.completada ? "Hecha" : estado.label}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="empty-state">No hay tareas cargadas todavía.</p>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">Documentos</h3>
+              {puedeEditar ? (
+                <>
+                  <input ref={inputArchivo} type="file" hidden onChange={handleSubirDocumento} />
+                  <button className="btn btn-primary" onClick={() => inputArchivo.current.click()} disabled={subiendo}>
+                    {subiendo ? "Subiendo..." : "Subir"}
+                  </button>
+                </>
+              ) : (
+                <span className="badge badge-neutral">Solo lectura</span>
+              )}
+            </div>
+
+            {errorDoc && <p style={{ color: "var(--danger)", fontSize: "13px" }}>{errorDoc}</p>}
+
+            {documentos.length > 0 ? (
+              documentos.map((d) => (
+                <div className="list-row" key={d.id}>
+                  <span style={{ color: "var(--link)", display: "flex" }}><Icon name="file" size={18} /></span>
+                  <button
+                    className="link-action list-main"
+                    style={{ fontSize: 14 }}
+                    title={d.descripcion || "Descargar"}
+                    onClick={() => handleDescargarDocumento(d.id, d.nombreOriginal)}
+                  >
+                    {d.nombreOriginal}
+                  </button>
+                  <span className="list-meta">{formatFechaCorta(d.fechaSubida)}</span>
+                  {puedeEliminar && (
+                    <button className="btn-danger-ghost" onClick={() => handleEliminarDocumento(d.id)}>
+                      Eliminar
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="empty-state">No hay documentos adjuntos todavía.</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

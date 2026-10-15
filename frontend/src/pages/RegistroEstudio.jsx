@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { registerTenant } from "../api/tenantsApi";
 import { useAuth } from "../context/AuthContext";
-import Logo from "../components/Logo";
-import LoginHero from "./LoginHero";
+import AuthLayout from "../components/AuthLayout";
 
 export default function RegistroEstudio() {
   const [form, setForm] = useState({
@@ -71,13 +70,7 @@ export default function RegistroEstudio() {
   };
 
   return (
-    <div className="login-screen">
-      <div className="login-panel">
-        <div className="login-card">
-          <div className="login-logo">
-            <Logo />
-          </div>
-
+    <AuthLayout>
           <h2>Registrá tu estudio</h2>
           <p className="login-subtitle">Creá la cuenta del estudio y su usuario administrador.</p>
 
@@ -188,10 +181,6 @@ export default function RegistroEstudio() {
               ¿Ya tenés cuenta? Iniciá sesión
             </Link>
           </form>
-        </div>
-      </div>
-
-      <LoginHero />
-    </div>
+    </AuthLayout>
   );
 }

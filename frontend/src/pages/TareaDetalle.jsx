@@ -2,16 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getTarea, updateTarea } from "../api/tareasApi";
 import BackButton from "../components/BackButton";
-
-function getEstadoTarea(tarea) {
-  if (tarea.completada) return { label: "Completada", clase: "badge-success", dot: "dot-success" };
-  const hoy = new Date();
-  const vencimiento = new Date(tarea.fechaVencimiento);
-  const diffDias = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
-  if (diffDias < 0) return { label: "Vencida", clase: "badge-danger", dot: "dot-danger" };
-  if (diffDias <= 3) return { label: "Proxima a vencer", clase: "badge-warning", dot: "dot-warning" };
-  return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
-}
+import { getEstadoTarea } from "../utils/tareas";
 
 function formatFechaCreacion(fecha) {
   if (!fecha) return "-";

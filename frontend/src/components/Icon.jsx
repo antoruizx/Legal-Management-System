@@ -91,6 +91,30 @@ const ICONOS = {
       <path d="m14.5 6.5 3 3" />
     </>
   ),
+  file: (
+    <>
+      <path d="M6 3.5h8l4 4v13H6z" />
+      <path d="M14 3.5v4h4M9 12h6M9 16h6" />
+    </>
+  ),
+  mail: (
+    <>
+      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+      <path d="m4 7.5 8 6 8-6" />
+    </>
+  ),
+  key: (
+    <>
+      <circle cx="8" cy="15.5" r="3.5" />
+      <path d="m10.5 13 8.5-8.5M16 7.5l2.5 2.5" />
+    </>
+  ),
+  alert: (
+    <>
+      <path d="M12 4 2.8 19.5h18.4z" />
+      <path d="M12 10v4.5M12 17v.3" />
+    </>
+  ),
   trending: (
     <>
       <path d="m3 17 6-6 4 4 8-8" />

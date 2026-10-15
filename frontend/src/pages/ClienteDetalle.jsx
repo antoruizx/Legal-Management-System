@@ -63,7 +63,7 @@ export default function ClienteDetalle() {
           </div>
           <div>
             <h2>{cliente.nombre} {cliente.apellido}</h2>
-            <div className="detail-subtitle">Cliente desde {cliente.fechaCreacion ? new Date(cliente.fechaCreacion).toLocaleDateString() : "-"}</div>
+            <div className="detail-subtitle">Cliente desde {cliente.fechaAlta ? new Date(cliente.fechaAlta).toLocaleDateString() : "-"}</div>
           </div>
         </div>
         {puedeEditar && (

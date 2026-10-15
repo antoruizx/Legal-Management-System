@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getClientes, deleteCliente } from "../api/clientesApi";
-import BackButton from "../components/BackButton";
+import { getExpedientes } from "../api/expedientesApi";
 import { useAuth } from "../context/AuthContext";
-
-function iniciales(nombre, apellido) {
-  return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
-}
+import { iniciales } from "../utils/tareas";
 
 export default function Clientes() {
   const { user } = useAuth();
@@ -15,13 +12,20 @@ export default function Clientes() {
   const puedeEliminar = esAdmin || user?.puedeEliminarClientes === true;
 
   const [clientes, setClientes] = useState([]);
+  const [expedientesPorCliente, setExpedientesPorCliente] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const cargarClientes = async () => {
     setLoading(true);
     try {
-      const response = await getClientes();
+      // El endpoint de clientes no trae sus expedientes: se cuentan aparte
+      const [response, expedientesRes] = await Promise.all([getClientes(), getExpedientes()]);
+      const conteo = {};
+      expedientesRes.data.forEach((e) => {
+        conteo[e.clienteId] = (conteo[e.clienteId] || 0) + 1;
+      });
+      setExpedientesPorCliente(conteo);
       setClientes(response.data);
     } catch (err) {
       setError("No se pudieron cargar los clientes");
@@ -51,13 +55,10 @@ export default function Clientes() {
   return (
     <div>
       <div className="page-header">
-        <div>
-          <BackButton />
-          <h2>Clientes</h2>
-        </div>
+        <h2>Clientes</h2>
         {puedeEditar && (
           <Link to="/clientes/nuevo">
-            <button className="btn btn-primary">+ Nuevo Cliente</button>
+            <button className="btn btn-primary">+ Nuevo cliente</button>
           </Link>
         )}
       </div>
@@ -67,9 +68,10 @@ export default function Clientes() {
           <thead>
             <tr>
               <th>Cliente</th>
-              <th>DNI</th>
+              <th>DNI / CUIT</th>
               <th>Email</th>
               <th>Teléfono</th>
+              <th>Expedientes</th>
               {(puedeEditar || puedeEliminar) && <th>Acciones</th>}
             </tr>
           </thead>
@@ -82,13 +84,14 @@ export default function Clientes() {
                     <span>{c.nombre} {c.apellido}</span>
                   </Link>
                 </td>
-                <td data-label="DNI">{c.dni}</td>
-                <td data-label="Email">{c.email}</td>
-                <td data-label="Teléfono">{c.telefono}</td>
+                <td data-label="DNI / CUIT">{c.dni || "—"}</td>
+                <td data-label="Email">{c.email || "—"}</td>
+                <td data-label="Teléfono">{c.telefono || "—"}</td>
+                <td data-label="Expedientes">{expedientesPorCliente[c.id] || 0}</td>
                 {(puedeEditar || puedeEliminar) && (
                   <td data-label="Acciones">
                     {puedeEditar && (
-                      <Link to={`/clientes/${c.id}/editar`} className="link-action">Editar</Link>
+                      <Link to={`/clientes/${c.id}/editar`} className="link-action" style={{ color: "var(--link)", fontWeight: 600 }}>Editar</Link>
                     )}
                     {puedeEditar && puedeEliminar && " · "}
                     {puedeEliminar && (

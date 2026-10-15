@@ -1,27 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getTareas, updateTarea, deleteTarea } from "../api/tareasApi";
-import BackButton from "../components/BackButton";
 import ConfirmDialog from "../components/ConfirmDialog";
-
-function getEstadoTarea(tarea) {
-  if (tarea.completada) return { label: "Completada", clase: "badge-success", dot: "dot-success" };
-
-  const hoy = new Date();
-  const vencimiento = new Date(tarea.fechaVencimiento);
-  const diffDias = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
-
-  if (diffDias < 0) return { label: "Vencida", clase: "badge-danger", dot: "dot-danger" };
-  if (diffDias <= 3) return { label: "Próxima a vencer", clase: "badge-warning", dot: "dot-warning" };
-  return { label: "Pendiente", clase: "badge-info", dot: "dot-info" };
-}
-
-function formatFechaCreacion(fecha) {
-  if (!fecha) return "-";
-  const d = new Date(fecha);
-  if (d.getFullYear() < 1900) return "-";
-  return d.toLocaleDateString();
-}
+import Icon from "../components/Icon";
+import { getEstadoTarea } from "../utils/tareas";
 
 export default function Tareas() {
   const navigate = useNavigate();
@@ -71,34 +53,39 @@ export default function Tareas() {
   if (loading) return <p>Cargando tareas...</p>;
   if (error) return <p style={{ color: "var(--danger)" }}>{error}</p>;
 
-  const tareasFiltradas = tareas.filter((t) => {
-    const estado = getEstadoTarea(t).label;
-    if (filtro === "Todas") return true;
-    if (filtro === "Completadas") return estado === "Completada";
-    if (filtro === "Pendientes") return estado === "Pendiente" || estado === "Próxima a vencer";
-    if (filtro === "Vencidas") return estado === "Vencida";
+  // Lo más atrasado primero; las completadas al final
+  const ordenadas = [...tareas].sort(
+    (a, b) => a.completada - b.completada || new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento)
+  );
+
+  const tareasFiltradas = ordenadas.filter((t) => {
+    const estado = getEstadoTarea(t).clave;
+    if (filtro === "Completadas") return estado === "completada";
+    if (filtro === "Pendientes") return estado !== "completada" && estado !== "vencida";
+    if (filtro === "Vencidas") return estado === "vencida";
     return true;
   });
 
-  const vencidas = tareas.filter((t) => getEstadoTarea(t).label === "Vencida").length;
-  const proximas = tareas.filter((t) => getEstadoTarea(t).label === "Próxima a vencer").length;
+  const vencidas = tareas.filter((t) => getEstadoTarea(t).clave === "vencida").length;
+  const urgentes = tareas.filter((t) => getEstadoTarea(t).clave === "urgente").length;
 
   return (
     <div>
       <div className="page-header">
-        <div>
-          <BackButton />
-          <h2>Tareas</h2>
-        </div>
+        <h2>Tareas</h2>
         <Link to="/tareas/nuevo">
-          <button className="btn btn-primary">+ Nueva Tarea</button>
+          <button className="btn btn-primary">+ Nueva tarea</button>
         </Link>
       </div>
 
-      {(vencidas > 0 || proximas > 0) && (
+      {(vencidas > 0 || urgentes > 0) && (
         <div className="alert-banner alert-warning">
-          {vencidas > 0 && <span>⚠️ Tenés {vencidas} tarea(s) vencida(s)</span>}
-          {proximas > 0 && <span>⏰ Tenés {proximas} tarea(s) próxima(s) a vencer</span>}
+          {vencidas > 0 && (
+            <span className="alert-line"><Icon name="alert" size={16} /> Tenés {vencidas} {vencidas === 1 ? "tarea vencida" : "tareas vencidas"}</span>
+          )}
+          {urgentes > 0 && (
+            <span className="alert-line"><Icon name="clock" size={16} /> {urgentes === 1 ? "1 tarea vence" : `${urgentes} tareas vencen`} en los próximos 2 días</span>
+          )}
         </div>
       )}
 
@@ -121,8 +108,7 @@ export default function Tareas() {
               <th>Título</th>
               <th>Expediente</th>
               <th>Responsable</th>
-              <th>Creada</th>
-              <th>Vencimiento</th>
+              <th>Vence</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
@@ -136,24 +122,23 @@ export default function Tareas() {
                   className="clickable-row"
                   onClick={() => navigate(`/tareas/${t.id}`)}
                 >
-                  <td data-label="Título" style={{ color: "var(--text-hi)", fontWeight: 500 }}>
+                  <td data-label="Título" style={{ fontWeight: 600 }}>
                     {t.titulo}
                   </td>
                   <td data-label="Expediente">
                     {t.expediente ? (
                       <Link
                         to={`/expedientes/${t.expediente.id}`}
-                        className="link-action"
-                        style={{ color: "var(--text-hi)" }}
+                        className="link-strong"
+                        title={t.expediente.caratula}
                         onClick={(ev) => ev.stopPropagation()}
                       >
-                        {t.expediente.caratula}
+                        {t.expediente.numero}
                       </Link>
                     ) : "-"}
                   </td>
                   <td data-label="Responsable">{t.user ? `${t.user.firstName} ${t.user.lastName}` : "-"}</td>
-                  <td data-label="Creada">{formatFechaCreacion(t.fechaCreacion)}</td>
-                  <td data-label="Vencimiento">{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
+                  <td data-label="Vence">{new Date(t.fechaVencimiento).toLocaleDateString()}</td>
                   <td data-label="Estado">
                     <span className={`badge ${estado.clase}`}>
                       <span className={`badge-dot ${estado.dot}`}></span>
@@ -162,10 +147,10 @@ export default function Tareas() {
                   </td>
                   <td data-label="Acciones" onClick={(ev) => ev.stopPropagation()}>
                     <button className="link-action" onClick={() => handleToggleCompletada(t)}>
-                      {t.completada ? "Marcar pendiente" : "Marcar completada"}
+                      {t.completada ? "Reabrir" : "Completar"}
                     </button>
                     {" · "}
-                    <Link to={`/tareas/${t.id}/editar`} className="link-action">Editar</Link>
+                    <Link to={`/tareas/${t.id}/editar`} className="link-strong">Editar</Link>
                     {" · "}
                     <button className="btn-danger-ghost" onClick={() => setAEliminar(t.id)}>Eliminar</button>
                   </td>

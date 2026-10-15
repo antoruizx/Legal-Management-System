@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getUsers, updateUser, createUser } from "../api/usersApi";
-import BackButton from "../components/BackButton";
+import { cargarDatosDemo, quitarDatosDemo } from "../api/demoApi";
+import Icon from "../components/Icon";
 import { useAuth } from "../context/AuthContext";
-
-function iniciales(nombre, apellido) {
-  return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
-}
+import { iniciales } from "../utils/tareas";
 
 const ROLES_ASIGNABLES = ["Abogado", "Asistente"];
 
@@ -29,12 +27,16 @@ export default function ConfiguracionUsuarios() {
   const [creando, setCreando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
 
+  const [procesandoDemo, setProcesandoDemo] = useState(false);
+  const [errorDemo, setErrorDemo] = useState("");
+  // Los usuarios de ejemplo se reconocen por el dominio de su email (ver DemoController)
+  const hayDatosDemo = users.some((u) => u.email.endsWith("@ejemplo.foja"));
+
   const cargarUsers = async () => {
     setLoading(true);
     try {
       const response = await getUsers();
-      // Solo se administran permisos de usuarios que no son Admin
-      setUsers(response.data.filter((u) => u.role !== "Admin"));
+      setUsers(response.data);
     } catch (err) {
       setError("No se pudieron cargar los usuarios");
     } finally {
@@ -89,28 +91,42 @@ export default function ConfiguracionUsuarios() {
     }
   };
 
+  const handleDatosDemo = async () => {
+    if (hayDatosDemo && !confirm("¿Quitar los datos de ejemplo? Se borran sus clientes, expedientes, tareas y usuarios.")) return;
+    setProcesandoDemo(true);
+    setErrorDemo("");
+    try {
+      await (hayDatosDemo ? quitarDatosDemo() : cargarDatosDemo());
+      // Recarga completa: el panel, la campanita y el buscador ya tienen datos viejos en memoria
+      window.location.reload();
+    } catch (err) {
+      setErrorDemo(err.response?.data?.message || "No se pudo completar la operación.");
+      setProcesandoDemo(false);
+    }
+  };
+
   if (loading) return <p>Cargando...</p>;
   if (error) return <p style={{ color: "var(--danger)" }}>{error}</p>;
 
   return (
-    <div>
-      <div className="page-header">
-        <BackButton to="/dashboard" />
-        <h2>Configuración de usuarios</h2>
-      </div>
-
-      <p style={{ color: "var(--text-lo)", fontSize: 13, marginBottom: 16 }}>
-        Por el momento hay un solo administrador. Desde acá podés definir, módulo por módulo, quién puede
-        editar y quién puede eliminar. Marcar el estado de expedientes y tareas está siempre permitido para todos.
-      </p>
-
-      <div className="card" style={{ marginBottom: 16 }}>
-        {!mostrarForm ? (
+    <div className="dashboard">
+      <div className="page-header" style={{ marginBottom: 0 }}>
+        <div>
+          <h2 className="page-title">Usuarios y permisos</h2>
+          <p className="page-subtitle" style={{ color: "var(--text-lo)" }}>
+            Definí, módulo por módulo, quién puede editar y quién puede eliminar.
+          </p>
+        </div>
+        {!mostrarForm && (
           <button className="btn btn-primary" onClick={() => setMostrarForm(true)}>
             + Agregar usuario
           </button>
-        ) : (
-          <form onSubmit={handleCrearUsuario}>
+        )}
+      </div>
+
+      {mostrarForm && (
+        <div className="card">
+          <form onSubmit={handleCrearUsuario} style={{ maxWidth: 520 }}>
             {errorForm && <div className="login-error">{errorForm}</div>}
             <div style={{ display: "flex", gap: "12px" }}>
               <div className="form-field" style={{ flex: 1, minWidth: 0 }}>
@@ -166,8 +182,8 @@ export default function ConfiguracionUsuarios() {
               <button type="button" className="btn" onClick={() => setMostrarForm(false)}>Cancelar</button>
             </div>
           </form>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="card">
         <table className="data-table">
@@ -181,50 +197,82 @@ export default function ConfiguracionUsuarios() {
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td data-label="Usuario">
-                  <div className="client-list-card">
-                    <div className="client-avatar">{iniciales(u.firstName, u.lastName)}</div>
-                    <div>
-                      <div>{u.firstName} {u.lastName}</div>
-                      <div style={{ fontSize: 12, color: "var(--text-lo)" }}>{u.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td data-label="Rol">
-                  <span className="badge badge-info">{u.role}</span>
-                </td>
-                {MODULOS_PERMISOS.map(({ editar, eliminar }) => (
-                  <td key={editar} data-label="Permiso">
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
-                        <input
-                          type="checkbox"
-                          checked={!!u[editar]}
-                          disabled={guardandoId === u.id}
-                          onChange={() => handleTogglePermiso(u, editar)}
-                        />
-                        Editar
-                      </label>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
-                        <input
-                          type="checkbox"
-                          checked={!!u[eliminar]}
-                          disabled={guardandoId === u.id}
-                          onChange={() => handleTogglePermiso(u, eliminar)}
-                        />
-                        Eliminar
-                      </label>
+            {users.map((u) => {
+              // Un administrador siempre puede todo: sus permisos se muestran pero no se editan
+              const esAdminFila = u.role === "Admin";
+              return (
+                <tr key={u.id}>
+                  <td data-label="Usuario">
+                    <div className="client-list-card">
+                      <div className="client-avatar">{iniciales(u.firstName, u.lastName)}</div>
+                      <div>
+                        <div>{u.firstName} {u.lastName}</div>
+                        <div style={{ fontSize: 13, color: "var(--text-lo)" }}>{u.email}</div>
+                      </div>
                     </div>
                   </td>
-                ))}
-              </tr>
-            ))}
+                  <td data-label="Rol">
+                    <span className="badge badge-info">{esAdminFila ? "Administrador" : u.role}</span>
+                  </td>
+                  {MODULOS_PERMISOS.map(({ label, editar, eliminar }) => (
+                    <td key={editar} data-label={label}>
+                      {[["Editar", editar], ["Eliminar", eliminar]].map(([texto, campo]) => (
+                        <label key={campo} className="permiso">
+                          <input
+                            type="checkbox"
+                            checked={esAdminFila || !!u[campo]}
+                            disabled={esAdminFila || guardandoId === u.id}
+                            onChange={() => handleTogglePermiso(u, campo)}
+                          />
+                          {texto}
+                        </label>
+                      ))}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+      </div>
 
-        {users.length === 0 && <p className="empty-state">No hay usuarios para administrar todavía.</p>}
+      <div className="card info-cards">
+        <div className="info-card">
+          <div className="kpi-icon"><Icon name="mail" size={22} /></div>
+          <div>
+            <h3 className="card-title">Recuperar contraseña</h3>
+            <p>Por email, SMS o WhatsApp, con código de verificación.</p>
+          </div>
+        </div>
+        <div className="info-card">
+          <div className="kpi-icon"><Icon name="bell" size={22} /></div>
+          <div>
+            <h3 className="card-title">Notificaciones en el sistema</h3>
+            <p>La campanita avisa de tareas vencidas y de las que vencen en los próximos 7 días.</p>
+          </div>
+        </div>
+        <div className="info-card">
+          <div className="kpi-icon"><Icon name="key" size={22} /></div>
+          <div>
+            <h3 className="card-title">Permisos por módulo</h3>
+            <p>Cambiar el estado de un expediente o completar una tarea está permitido para todos.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="card card-head" style={{ marginBottom: 0 }}>
+        <div>
+          <h3 className="card-title">Datos de ejemplo</h3>
+          <p className="card-caption" style={{ fontSize: 13 }}>
+            {hayDatosDemo
+              ? "El estudio tiene cargados clientes, expedientes, tareas y usuarios de ejemplo. Al quitarlos, tus datos reales no se tocan."
+              : "Cargá clientes, expedientes, movimientos, tareas y usuarios de ejemplo para ver el sistema con contenido. Después se pueden quitar."}
+          </p>
+          {errorDemo && <p style={{ color: "var(--danger)", fontSize: 13, margin: "6px 0 0" }}>{errorDemo}</p>}
+        </div>
+        <button className="btn" onClick={handleDatosDemo} disabled={procesandoDemo}>
+          {procesandoDemo ? "Procesando..." : hayDatosDemo ? "Quitar datos de ejemplo" : "Cargar datos de ejemplo"}
+        </button>
       </div>
     </div>
   );

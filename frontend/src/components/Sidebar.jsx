@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import Icon from "./Icon";
+import Logo from "./Logo";
 import { useAuth } from "../context/AuthContext";
 
 const WHATSAPP_NUMERO = "5493814988682";
@@ -99,16 +100,13 @@ export default function Sidebar({ open, onClose }) {
     <>
       <div className={`sidebar-overlay${open ? " visible" : ""}`} onClick={onClose} />
       <div className={`sidebar${open ? " open" : ""}`}>
-        <div className="sidebar-brand">
-          <img src="/foja-icono.svg" alt="" />
-          <span>Foja</span>
-        </div>
-        {user?.tenantName && <div className="sidebar-label">{user.tenantName}</div>}
+        <Logo />
 
-        <NavLink to="/dashboard" className={linkClass} onClick={onClose}><Icon name="home" /> Dashboard</NavLink>
+        <NavLink to="/dashboard" className={linkClass} onClick={onClose}><Icon name="home" /> Panel</NavLink>
         <NavLink to="/clientes" className={linkClass} onClick={onClose}><Icon name="users" /> Clientes</NavLink>
         <NavLink to="/expedientes" className={linkClass} onClick={onClose}><Icon name="folder" /> Expedientes</NavLink>
         <NavLink to="/tareas" className={linkClass} onClick={onClose}><Icon name="tasks" /> Tareas</NavLink>
+        <NavLink to="/honorarios" className={linkClass} onClick={onClose}><Icon name="wallet" /> Honorarios</NavLink>
         <NavLink to="/calendario" className={linkClass} onClick={onClose}><Icon name="calendar" /> Calendario</NavLink>
         <NavLink to="/historial" className={linkClass} onClick={onClose}><Icon name="clock" /> Historial</NavLink>
         <NavLink to="/metricas" className={linkClass} onClick={onClose}><Icon name="chart" /> Métricas</NavLink>
@@ -126,6 +124,8 @@ export default function Sidebar({ open, onClose }) {
             <span className="sidebar-lock"><Icon name="lock" size={14} /></span>
           </button>
         ))}
+
+        {user?.tenantName && <div className="sidebar-footer">{user.tenantName}</div>}
       </div>
 
       {funcionSeleccionada && (
