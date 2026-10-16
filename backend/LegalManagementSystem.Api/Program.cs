@@ -29,13 +29,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddHttpClient<IMessageSender, MessageSender>();
 
-// Documentos: con Almacenamiento:Bucket (en producción, variable Almacenamiento__Bucket) van a
-// Google Cloud Storage; sin él, a la carpeta local Uploads/.
+// Documentos (en producción se configuran con variables de entorno):
+// - Almacenamiento__Bucket: en ese bucket de Google Cloud Storage.
+// - Almacenamiento__Tipo=BaseDeDatos: en la tabla ArchivosGuardados (hosting sin disco persistente).
+// - Ninguna: en la carpeta local Uploads/ (desarrollo).
 var bucketDocumentos = builder.Configuration["Almacenamiento:Bucket"];
-if (string.IsNullOrWhiteSpace(bucketDocumentos))
-    builder.Services.AddSingleton<IAlmacenamientoArchivos, AlmacenamientoLocal>();
-else
+if (!string.IsNullOrWhiteSpace(bucketDocumentos))
     builder.Services.AddSingleton<IAlmacenamientoArchivos>(_ => new AlmacenamientoGoogleCloud(bucketDocumentos));
+else if (string.Equals(builder.Configuration["Almacenamiento:Tipo"], "BaseDeDatos", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddScoped<IAlmacenamientoArchivos, AlmacenamientoBaseDeDatos>();
+else
+    builder.Services.AddSingleton<IAlmacenamientoArchivos, AlmacenamientoLocal>();
 
 // --- Configuración de JWT ---
 var jwtKey = builder.Configuration["Jwt:Key"]!;

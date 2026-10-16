@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Documento> Documentos { get; set; }
     public DbSet<PasswordResetCode> PasswordResetCodes => Set<PasswordResetCode>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<ArchivoGuardado> ArchivosGuardados => Set<ArchivoGuardado>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

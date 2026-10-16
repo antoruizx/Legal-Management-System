@@ -22,6 +22,26 @@ namespace LegalManagementSystem.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LegalManagementSystem.Api.Models.ArchivoGuardado", b =>
+                {
+                    b.Property<string>("Nombre")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<byte[]>("Contenido")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("TipoContenido")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Nombre");
+
+                    b.ToTable("ArchivosGuardados");
+                });
+
             modelBuilder.Entity("LegalManagementSystem.Api.Models.Cliente", b =>
                 {
                     b.Property<int>("Id")
