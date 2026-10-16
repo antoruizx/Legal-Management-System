@@ -28,6 +28,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     ));
 
 builder.Services.AddHttpClient<IMessageSender, MessageSender>();
+builder.Services.AddScoped<ContactoComercial>();
+builder.Services.AddHostedService<AvisosDePruebaService>();
 
 // Documentos (en producción se configuran con variables de entorno):
 // - Almacenamiento__Bucket: en ese bucket de Google Cloud Storage.

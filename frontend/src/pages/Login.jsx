@@ -11,6 +11,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [lento, setLento] = useState(false);
+  // Respuesta del login cuando venció la prueba: mensaje, estudio y contacto del asesor (con links de WhatsApp)
+  const [pruebaVencida, setPruebaVencida] = useState(null);
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
@@ -27,6 +29,41 @@ export default function Login() {
 
   // Si ya hay sesión iniciada no tiene sentido mostrar el login
   if (user) return <Navigate to="/dashboard" replace />;
+
+  if (pruebaVencida) {
+    const { contacto } = pruebaVencida;
+    return (
+      <AuthLayout>
+        <h2>Terminó tu prueba gratis</h2>
+        <p className="login-subtitle">{pruebaVencida.message}</p>
+
+        {contacto?.linkContratar && (
+          <>
+            <a href={contacto.linkContratar} target="_blank" rel="noreferrer" className="btn btn-whatsapp login-submit">
+              Me interesa contratar el servicio
+            </a>
+            <a href={contacto.linkDudas} target="_blank" rel="noreferrer" className="btn login-submit" style={{ marginTop: 10 }}>
+              Tengo algunas dudas, ¿me podrías asesorar más?
+            </a>
+          </>
+        )}
+
+        <p className="contacto-asesor">
+          Tu asesor: <b>{contacto?.nombre}</b>
+          {contacto?.email && (
+            <>
+              <br />
+              <a href={`mailto:${contacto.email}`}>{contacto.email}</a>
+            </>
+          )}
+        </p>
+
+        <button type="button" className="login-link" onClick={() => setPruebaVencida(null)}>
+          ← Volver al inicio de sesión
+        </button>
+      </AuthLayout>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,6 +84,8 @@ export default function Login() {
         setError("No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.");
       } else if (err.response.status === 401) {
         setError("Email o contraseña incorrectos");
+      } else if (err.response.status === 403 && err.response.data?.codigo === "PRUEBA_VENCIDA") {
+        setPruebaVencida(err.response.data);
       } else if (err.response.status === 403) {
         setError(err.response.data?.message || "Tu estudio está desactivado.");
       } else if (err.response.status === 429) {

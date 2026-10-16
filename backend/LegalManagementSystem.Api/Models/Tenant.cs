@@ -25,5 +25,11 @@ public class Tenant
     // Vendedor que trajo al estudio (usuario con EsVendedor), si se registró con su código
     public int? VendedorId { get; set; }
 
+    // Mails automáticos de la prueba (AvisosDePruebaService): cuándo se mandó cada uno, para no repetirlos.
+    // Se vuelven a null al extender la prueba.
+    public DateTime? AvisoPorVencerEnviado { get; set; }
+    public DateTime? AvisoVencidoEnviado { get; set; }
+
     public const int DiasDePrueba = 7;
+    public const int DiasAvisoPorVencer = 2;
 }

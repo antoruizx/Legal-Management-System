@@ -54,19 +54,22 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<AuthController> _logger;
+    private readonly ContactoComercial _contactos;
 
     public AuthController(
         ApplicationDbContext context,
         IMessageSender sender,
         ITokenService tokenService,
         IWebHostEnvironment env,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        ContactoComercial contactos)
     {
         _context = context;
         _sender = sender;
         _tokenService = tokenService;
         _env = env;
         _logger = logger;
+        _contactos = contactos;
     }
 
     [HttpPost("login")]
@@ -90,8 +93,15 @@ public class AuthController : ControllerBase
         if (tenant == null || !tenant.Active)
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Tu estudio está desactivado. Contactá al soporte." });
 
+        // Con la contraseña ya validada se le muestra cómo contactar a su asesor para contratar
         if (tenant.PruebaHasta != null && tenant.PruebaHasta < DateTime.UtcNow)
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Tu período de prueba de Foja terminó. Contactá a tu asesor para seguir usando el sistema; tus datos se conservan." });
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                message = "Tu período de prueba de Foja terminó. Tus datos están guardados: contactá a tu asesor para seguir usando el sistema.",
+                codigo = "PRUEBA_VENCIDA",
+                estudio = tenant.Name,
+                contacto = await _contactos.ParaEstudioAsync(tenant)
+            });
 
         var token = _tokenService.GenerarToken(user);
 

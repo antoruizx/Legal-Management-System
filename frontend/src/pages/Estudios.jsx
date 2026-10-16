@@ -13,7 +13,7 @@ import PasswordInput, { AvisoCoincidencia } from "../components/PasswordInput";
 import { useAuth } from "../context/AuthContext";
 import { estadoComercial } from "../utils/prueba";
 
-const VENDEDOR_VACIO = { firstName: "", lastName: "", email: "", password: "" };
+const VENDEDOR_VACIO = { firstName: "", lastName: "", email: "", telefono: "", password: "" };
 
 function iniciales(nombre) {
   return nombre
@@ -94,6 +94,7 @@ export default function Estudios() {
         firstName: nuevoVendedor.firstName.trim(),
         lastName: nuevoVendedor.lastName.trim(),
         email: nuevoVendedor.email.trim(),
+        telefono: nuevoVendedor.telefono.trim(),
         password: nuevoVendedor.password,
       });
       setNuevoVendedor(VENDEDOR_VACIO);
@@ -216,7 +217,8 @@ export default function Estudios() {
             <h3 className="card-title">Vendedores</h3>
             <p className="card-caption" style={{ fontSize: 13 }}>
               Generan códigos de prueba desde su cuenta. Cada uno tiene un estudio de demostración propio, vacío,
-              para mostrar el sistema sin ver datos de clientes.
+              para mostrar el sistema sin ver datos de clientes. Su WhatsApp aparece en los mails y en la pantalla
+              de prueba vencida de los estudios que traen. Lo pueden cambiar desde Mi perfil.
             </p>
           </div>
           {!mostrarFormVendedor && (
@@ -231,6 +233,7 @@ export default function Estudios() {
               <input className="input" placeholder="Nombre" value={nuevoVendedor.firstName} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, firstName: e.target.value })} required />
               <input className="input" placeholder="Apellido" value={nuevoVendedor.lastName} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, lastName: e.target.value })} required />
               <input className="input" type="email" placeholder="Email" value={nuevoVendedor.email} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, email: e.target.value })} required />
+              <input className="input" type="tel" placeholder="WhatsApp: +54 9 381 1234567" title="Con código de país: lo usan los botones de WhatsApp de los mails a sus clientes" value={nuevoVendedor.telefono} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, telefono: e.target.value })} required />
               <PasswordInput className="input" placeholder="Contraseña (mín. 8)" minLength={8} autoComplete="new-password" value={nuevoVendedor.password} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, password: e.target.value })} required />
               <PasswordInput className="input" placeholder="Repetí la contraseña" autoComplete="new-password" value={confirmarPassword} onChange={(e) => setConfirmarPassword(e.target.value)} required />
             </div>
@@ -251,6 +254,7 @@ export default function Estudios() {
             <tr>
               <th>Vendedor</th>
               <th>Email</th>
+              <th>WhatsApp</th>
               <th>Códigos</th>
               <th>En prueba</th>
               <th>Pagos</th>
@@ -261,6 +265,7 @@ export default function Estudios() {
               <tr key={v.id}>
                 <td data-label="Vendedor">{v.firstName} {v.lastName}</td>
                 <td data-label="Email">{v.email}</td>
+                <td data-label="WhatsApp">{v.telefono || "—"}</td>
                 <td data-label="Códigos">{v.codigosGenerados}</td>
                 <td data-label="En prueba">{v.estudiosEnPrueba}</td>
                 <td data-label="Pagos">{v.estudiosPagos}</td>

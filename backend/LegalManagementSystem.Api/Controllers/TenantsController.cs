@@ -21,6 +21,9 @@ public class RegisterTenantRequest
     public string AdminEmail { get; set; } = string.Empty;
     public string AdminPassword { get; set; } = string.Empty;
     public string InvitationCode { get; set; } = string.Empty;
+
+    // Solo en el segundo paso (register): el que llegó por mail
+    public string? CodigoVerificacion { get; set; }
 }
 
 public class SetTenantActiveRequest
@@ -40,12 +43,24 @@ public class TenantsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
+    private readonly IMessageSender _sender;
+    private readonly IWebHostEnvironment _env;
+    private readonly ILogger<TenantsController> _logger;
 
-    public TenantsController(ApplicationDbContext context, ITokenService tokenService, IConfiguration configuration)
+    public TenantsController(
+        ApplicationDbContext context,
+        ITokenService tokenService,
+        IConfiguration configuration,
+        IMessageSender sender,
+        IWebHostEnvironment env,
+        ILogger<TenantsController> logger)
     {
         _context = context;
         _tokenService = tokenService;
         _configuration = configuration;
+        _sender = sender;
+        _env = env;
+        _logger = logger;
     }
 
     // ---------- Panel de estudios (solo superadmin) ----------
@@ -96,6 +111,9 @@ public class TenantsController : ControllerBase
 
         var desde = tenant.PruebaHasta > DateTime.UtcNow ? tenant.PruebaHasta.Value : DateTime.UtcNow;
         tenant.PruebaHasta = desde.AddDays(request.Dias);
+        // Con la fecha nueva, los avisos por mail se vuelven a mandar cuando corresponda
+        tenant.AvisoPorVencerEnviado = null;
+        tenant.AvisoVencidoEnviado = null;
         await _context.SaveChangesAsync();
         return Ok(new { tenant.PruebaHasta });
     }
@@ -131,42 +149,86 @@ public class TenantsController : ControllerBase
 
     // ---------- Alta de estudio ----------
 
-    // Alta de un estudio nuevo con su primer usuario Admin. Público: no requiere estar logueado,
-    // pero sí un código de invitación: uno de un solo uso generado por un vendedor (CodigosController)
+    // El alta tiene dos pasos, los dos públicos (nadie está logueado todavía):
+    // 1. register/enviar-codigo: valida los datos y manda un código de 6 dígitos al email.
+    // 2. register: con ese código, crea el estudio y su primer usuario Admin.
+    // Hace falta un código de invitación: uno de un solo uso generado por un vendedor (CodigosController)
     // o el código general Registro:Codigo (en producción, variable Registro__Codigo).
     // Todo estudio nuevo arranca con Tenant.DiasDePrueba días de prueba; el superadmin lo pasa a pago.
+
+    [HttpPost("register/enviar-codigo")]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> EnviarCodigoRegistro(RegisterTenantRequest request)
+    {
+        var (error, _, email) = await ValidarDatosRegistroAsync(request);
+        if (error != null) return error;
+
+        var respuesta = Ok(new { message = $"Te enviamos un código a {email}." });
+
+        // Un código por minuto por email: evita que usen el formulario para mandar mails en cantidad
+        var ultimo = await _context.VerificacionesEmail
+            .Where(v => v.Email == email)
+            .OrderByDescending(v => v.CreatedAt)
+            .FirstOrDefaultAsync();
+        if (ultimo != null && ultimo.CreatedAt > DateTime.UtcNow.AddSeconds(-60))
+            return BadRequest(new { message = "Ya te mandamos un código hace menos de un minuto. Revisá tu correo (también la carpeta de spam)." });
+
+        var anteriores = await _context.VerificacionesEmail.Where(v => v.Email == email && !v.Used).ToListAsync();
+        foreach (var v in anteriores) v.Used = true;
+
+        var codigo = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        _context.VerificacionesEmail.Add(new VerificacionEmail
+        {
+            Email = email,
+            CodeHash = BCrypt.Net.BCrypt.HashPassword(codigo),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(15)
+        });
+        await _context.SaveChangesAsync();
+
+        if (_env.IsDevelopment())
+            _logger.LogInformation("Código de verificación de registro para {Email}: {Codigo}", email, codigo);
+
+        var envio = await _sender.SendEmailAsync(
+            request.AdminEmail.Trim(),
+            $"Tu código para crear tu estudio en Foja: {codigo}",
+            PlantillasMail.CodigoVerificacion(request.AdminFirstName.Trim(), codigo));
+
+        if (!envio.Ok)
+        {
+            _logger.LogError("No se pudo enviar el código de registro a {Email}: {Detalle}", email, envio.Detail);
+            // En desarrollo el código quedó en el log, así que se puede seguir sin mail
+            if (!_env.IsDevelopment())
+                return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    new { message = "No pudimos enviarte el mail con el código. Probá de nuevo en unos minutos." });
+        }
+
+        return respuesta;
+    }
+
     [HttpPost("register")]
     [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(RegisterTenantRequest request)
     {
-        var codigoIngresado = (request.InvitationCode ?? "").Trim().ToUpperInvariant();
+        var (error, codigoVendedor, email) = await ValidarDatosRegistroAsync(request);
+        if (error != null) return error;
+
         var ahora = DateTime.UtcNow;
 
-        var codigoVendedor = await _context.CodigosInvitacion
-            .FirstOrDefaultAsync(c => c.Codigo == codigoIngresado && c.UsadoEl == null && c.VenceEl > ahora);
+        var verificacion = await _context.VerificacionesEmail
+            .Where(v => v.Email == email && !v.Used && v.ExpiresAt > ahora)
+            .OrderByDescending(v => v.CreatedAt)
+            .FirstOrDefaultAsync();
+        if (verificacion == null || verificacion.Attempts >= 5)
+            return BadRequest(new { message = "El código de verificación venció. Pedí uno nuevo." });
 
-        var codigoGeneral = _configuration["Registro:Codigo"];
-        var esCodigoGeneral = codigoVendedor == null
-            && !string.IsNullOrWhiteSpace(codigoGeneral)
-            && CodigoValido(request.InvitationCode, codigoGeneral);
-
-        if (codigoVendedor == null && !esCodigoGeneral)
-            return BadRequest(new { message = "El código de invitación no es válido o ya fue usado" });
-
-        if (string.IsNullOrWhiteSpace(request.StudioName))
-            return BadRequest(new { message = "El nombre del estudio es obligatorio" });
-
-        if (string.IsNullOrWhiteSpace(request.AdminEmail) || string.IsNullOrWhiteSpace(request.AdminPassword))
-            return BadRequest(new { message = "Email y contraseña son obligatorios" });
-
-        if (request.AdminPassword.Length < 8)
-            return BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres" });
-
-        var email = request.AdminEmail.Trim().ToLowerInvariant();
-
-        // Nadie logueado todavía: busca en todos los estudios (el email es único en toda la app)
-        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == email))
-            return BadRequest(new { message = "Ya existe una cuenta con ese email" });
+        if (!BCrypt.Net.BCrypt.Verify((request.CodigoVerificacion ?? "").Trim(), verificacion.CodeHash))
+        {
+            verificacion.Attempts++;
+            await _context.SaveChangesAsync();
+            return BadRequest(new { message = "El código de verificación es incorrecto." });
+        }
+        verificacion.Used = true;
+        await _context.SaveChangesAsync();
 
         var slugBase = GenerarSlug(request.StudioName);
         var slug = slugBase;
@@ -245,6 +307,40 @@ public class TenantsController : ControllerBase
             puedeEditarTareas = true,
             puedeEliminarTareas = true
         });
+    }
+
+    // Validaciones comunes a los dos pasos del alta. No "toma" el código de invitación: eso se hace
+    // recién al crear el estudio, para que un error de tipeo no lo queme.
+    private async Task<(IActionResult? error, CodigoInvitacion? codigoVendedor, string email)> ValidarDatosRegistroAsync(RegisterTenantRequest request)
+    {
+        var codigoIngresado = (request.InvitationCode ?? "").Trim().ToUpperInvariant();
+        var email = (request.AdminEmail ?? "").Trim().ToLowerInvariant();
+
+        var codigoVendedor = await _context.CodigosInvitacion
+            .FirstOrDefaultAsync(c => c.Codigo == codigoIngresado && c.UsadoEl == null && c.VenceEl > DateTime.UtcNow);
+
+        var codigoGeneral = _configuration["Registro:Codigo"];
+        var esCodigoGeneral = codigoVendedor == null
+            && !string.IsNullOrWhiteSpace(codigoGeneral)
+            && CodigoValido(request.InvitationCode, codigoGeneral);
+
+        if (codigoVendedor == null && !esCodigoGeneral)
+            return (BadRequest(new { message = "El código de invitación no es válido o ya fue usado" }), null, email);
+
+        if (string.IsNullOrWhiteSpace(request.StudioName))
+            return (BadRequest(new { message = "El nombre del estudio es obligatorio" }), null, email);
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(request.AdminPassword))
+            return (BadRequest(new { message = "Email y contraseña son obligatorios" }), null, email);
+
+        if (request.AdminPassword.Length < 8)
+            return (BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres" }), null, email);
+
+        // Nadie logueado todavía: busca en todos los estudios (el email es único en toda la app)
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == email))
+            return (BadRequest(new { message = "Ya existe una cuenta con ese email" }), null, email);
+
+        return (null, codigoVendedor, email);
     }
 
     // Comparación en tiempo constante: no deja adivinar el código midiendo cuánto tarda la respuesta

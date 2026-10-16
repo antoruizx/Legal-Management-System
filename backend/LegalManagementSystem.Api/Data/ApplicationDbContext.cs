@@ -24,6 +24,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<ArchivoGuardado> ArchivosGuardados => Set<ArchivoGuardado>();
     public DbSet<CodigoInvitacion> CodigosInvitacion => Set<CodigoInvitacion>();
+    public DbSet<VerificacionEmail> VerificacionesEmail => Set<VerificacionEmail>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +39,8 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(t => t.VendedorId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<VerificacionEmail>().HasIndex(v => v.Email);
 
         modelBuilder.Entity<CodigoInvitacion>(e =>
         {

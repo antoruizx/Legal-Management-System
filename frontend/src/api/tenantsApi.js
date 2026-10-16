@@ -1,6 +1,8 @@
 import axiosClient from "./axiosClient";
 
-// Público: crea un estudio nuevo con su primer usuario Admin y devuelve la sesión ya iniciada
+// Público, en dos pasos: primero se manda el código de verificación al email del admin;
+// después, con ese código, se crea el estudio y devuelve la sesión ya iniciada
+export const enviarCodigoRegistro = (data) => axiosClient.post("/Tenants/register/enviar-codigo", data);
 export const registerTenant = (data) => axiosClient.post("/Tenants/register", data);
 
 // Solo superadmin: panel de estudios

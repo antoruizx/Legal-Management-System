@@ -1646,3 +1646,31 @@ input[type="checkbox"] {
 
 .password-match.ok { color: var(--success); }
 .password-match.error { color: var(--danger); }
+
+/* ---------- Prueba vencida: contacto del asesor ---------- */
+a.btn {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  border-color: #25D366;
+  color: #ffffff;
+}
+
+.btn-whatsapp:hover { background: #1EBE5A; border-color: #1EBE5A; color: #ffffff; }
+
+.contacto-asesor {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-lo);
+  line-height: 1.6;
+}
+
+.contacto-asesor b { color: var(--text-hi); }
+.contacto-asesor a { color: var(--link); }

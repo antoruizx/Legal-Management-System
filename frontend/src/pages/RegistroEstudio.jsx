@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { registerTenant } from "../api/tenantsApi";
+import { registerTenant, enviarCodigoRegistro } from "../api/tenantsApi";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
 import PasswordInput, { AvisoCoincidencia } from "../components/PasswordInput";
@@ -19,6 +19,9 @@ export default function RegistroEstudio() {
     invitationCode: codigoDelLink,
   });
   const [confirmar, setConfirmar] = useState("");
+  const [paso, setPaso] = useState("datos"); // "datos" → "codigo" (verificación por mail)
+  const [codigoVerificacion, setCodigoVerificacion] = useState("");
+  const [info, setInfo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { user, login, logout } = useAuth();
@@ -48,10 +51,47 @@ export default function RegistroEstudio() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  const datosLimpios = () => ({
+    ...form,
+    studioName: form.studioName.trim(),
+    adminFirstName: form.adminFirstName.trim(),
+    adminLastName: form.adminLastName.trim(),
+    adminEmail: form.adminEmail.trim(),
+    invitationCode: form.invitationCode.trim(),
+  });
 
+  const mostrarError = (err) => {
+    if (err.code === "ECONNABORTED") {
+      setError("El servidor tardó demasiado en responder. Probá de nuevo en un momento.");
+    } else if (!err.response) {
+      setError("No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.");
+    } else if (err.response.status === 429) {
+      setError("Demasiados intentos. Esperá un minuto y volvé a probar.");
+    } else if ([400, 403, 503].includes(err.response.status) && err.response.data?.message) {
+      setError(err.response.data.message);
+    } else {
+      setError("Ocurrió un error inesperado. Intentá de nuevo.");
+    }
+  };
+
+  // Paso 1: valida los datos y manda el código de verificación al email
+  const enviarCodigo = async () => {
+    setError("");
+    setInfo("");
+    setLoading(true);
+    try {
+      const response = await enviarCodigoRegistro(datosLimpios());
+      setInfo(response.data.message);
+      setPaso("codigo");
+    } catch (err) {
+      mostrarError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     if (form.adminPassword.length < 8) {
       setError("La contraseña debe tener al menos 8 caracteres");
       return;
@@ -60,36 +100,66 @@ export default function RegistroEstudio() {
       setError("Las contraseñas no coinciden");
       return;
     }
+    enviarCodigo();
+  };
 
+  // Paso 2: con el código del mail se crea el estudio y se entra directo
+  const handleCrear = async (e) => {
+    e.preventDefault();
+    setError("");
     setLoading(true);
     try {
-      const response = await registerTenant({
-        ...form,
-        studioName: form.studioName.trim(),
-        adminFirstName: form.adminFirstName.trim(),
-        adminLastName: form.adminLastName.trim(),
-        adminEmail: form.adminEmail.trim(),
-        invitationCode: form.invitationCode.trim(),
-      });
-      // El alta devuelve la misma sesión que el login: entramos directo
+      const response = await registerTenant({ ...datosLimpios(), codigoVerificacion: codigoVerificacion.trim() });
       login(response.data);
       navigate("/dashboard");
     } catch (err) {
-      if (err.code === "ECONNABORTED") {
-        setError("El servidor tardó demasiado en responder. Probá de nuevo en un momento.");
-      } else if (!err.response) {
-        setError("No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.");
-      } else if (err.response.status === 429) {
-        setError("Demasiados intentos. Esperá un minuto y volvé a probar.");
-      } else if ([400, 403].includes(err.response.status) && err.response.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("Ocurrió un error inesperado. Intentá de nuevo.");
-      }
+      mostrarError(err);
     } finally {
       setLoading(false);
     }
   };
+
+  if (paso === "codigo") {
+    return (
+      <AuthLayout>
+        <h2>Revisá tu correo</h2>
+        <p className="login-subtitle">
+          Te mandamos un código de 6 dígitos a <b>{form.adminEmail.trim()}</b>. Si no lo ves, fijate en la carpeta de spam.
+        </p>
+
+        {error && <div className="login-error">{error}</div>}
+        {info && !error && <div className="login-info">{info}</div>}
+
+        <form onSubmit={handleCrear}>
+          <div className="form-field">
+            <label htmlFor="registro-verificacion">Código de verificación</label>
+            <input
+              id="registro-verificacion"
+              className="code-input"
+              value={codigoVerificacion}
+              onChange={(e) => setCodigoVerificacion(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              required
+              autoFocus
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary login-submit" disabled={loading || codigoVerificacion.length !== 6}>
+            {loading ? "Creando estudio..." : "Crear estudio"}
+          </button>
+
+          <button type="button" className="login-link" onClick={enviarCodigo} disabled={loading}>
+            Reenviar el código
+          </button>
+          <button type="button" className="login-link" onClick={() => { setPaso("datos"); setError(""); setCodigoVerificacion(""); }}>
+            ← Corregir mis datos
+          </button>
+        </form>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>
@@ -196,7 +266,7 @@ export default function RegistroEstudio() {
             </div>
 
             <button type="submit" className="btn btn-primary login-submit" disabled={loading}>
-              {loading ? "Creando estudio..." : "Crear estudio"}
+              {loading ? "Enviando código..." : "Continuar"}
             </button>
 
             <Link to="/login" className="login-link">

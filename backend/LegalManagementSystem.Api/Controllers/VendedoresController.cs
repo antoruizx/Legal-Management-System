@@ -1,6 +1,7 @@
 using LegalManagementSystem.Api.Data;
 using LegalManagementSystem.Api.Dtos;
 using LegalManagementSystem.Api.Models;
+using LegalManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,9 @@ public class CrearVendedorRequest
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+
+    // Con código de país: se usa para los botones de WhatsApp de los mails y del login vencido
+    public string Telefono { get; set; } = string.Empty;
 }
 
 // Alta de vendedores (solo superadmin). Cada vendedor tiene su propio estudio de demostración,
@@ -48,6 +52,7 @@ public class VendedoresController : ControllerBase
             v.FirstName,
             v.LastName,
             v.Email,
+            v.Telefono,
             CodigosGenerados = codigos.Count(c => c.VendedorId == v.Id),
             EstudiosEnPrueba = estudios.Count(t => t.VendedorId == v.Id && t.PruebaHasta != null),
             EstudiosPagos = estudios.Count(t => t.VendedorId == v.Id && t.PruebaHasta == null)
@@ -63,6 +68,10 @@ public class VendedoresController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(request.Email) || request.Password.Length < 8)
             return BadRequest(new { message = "Ingresá un email y una contraseña de al menos 8 caracteres" });
+
+        var whatsapp = ContactoComercial.SoloDigitos(request.Telefono);
+        if (whatsapp == null)
+            return BadRequest(new { message = "Ingresá el WhatsApp con código de país, por ejemplo +54 9 381 1234567" });
 
         var email = request.Email.Trim();
         if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email.ToLower() == email.ToLowerInvariant()))
@@ -85,6 +94,7 @@ public class VendedoresController : ControllerBase
             LastName = request.LastName.Trim(),
             Email = email,
             Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Telefono = "+" + whatsapp,
             Role = Roles.Admin,
             EsVendedor = true,
             PuedeEditarClientes = true,
