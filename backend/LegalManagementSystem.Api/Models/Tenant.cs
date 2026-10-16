@@ -18,4 +18,12 @@ public class Tenant
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public bool Active { get; set; } = true;
+
+    // Fin de la prueba gratis. null = cliente pago (o estudio sin prueba): no vence.
+    public DateTime? PruebaHasta { get; set; }
+
+    // Vendedor que trajo al estudio (usuario con EsVendedor), si se registró con su código
+    public int? VendedorId { get; set; }
+
+    public const int DiasDePrueba = 7;
 }

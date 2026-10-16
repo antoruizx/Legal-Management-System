@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useNavigate, Link, Navigate, useSearchParams } from "react-router-dom";
 import { registerTenant } from "../api/tenantsApi";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
 
 export default function RegistroEstudio() {
+  // El link que mandan los vendedores trae el código: /registro?codigo=FOJA-XXXXXX
+  const [searchParams] = useSearchParams();
+  const codigoDelLink = searchParams.get("codigo") || "";
+
   const [form, setForm] = useState({
     studioName: "",
     adminFirstName: "",
     adminLastName: "",
     adminEmail: "",
     adminPassword: "",
-    invitationCode: "",
+    invitationCode: codigoDelLink,
   });
   const [confirmar, setConfirmar] = useState("");
   const [error, setError] = useState("");
@@ -72,7 +76,7 @@ export default function RegistroEstudio() {
   return (
     <AuthLayout>
           <h2>Registrá tu estudio</h2>
-          <p className="login-subtitle">Creá la cuenta del estudio y su usuario administrador.</p>
+          <p className="login-subtitle">Creá la cuenta del estudio y su usuario administrador. Tenés 7 días de prueba gratis.</p>
 
           {error && <div className="login-error">{error}</div>}
 
@@ -84,10 +88,10 @@ export default function RegistroEstudio() {
                 name="invitationCode"
                 value={form.invitationCode}
                 onChange={handleChange}
-                placeholder="El que te pasamos para dar de alta el estudio"
+                placeholder="FOJA-XXXXXX, el que te pasó tu asesor"
                 autoComplete="off"
                 required
-                autoFocus
+                autoFocus={!codigoDelLink}
               />
             </div>
 
@@ -101,6 +105,7 @@ export default function RegistroEstudio() {
                 placeholder="Estudio Jurídico Pérez"
                 maxLength={150}
                 required
+                autoFocus={Boolean(codigoDelLink)}
               />
             </div>
 

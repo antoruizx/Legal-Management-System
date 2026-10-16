@@ -84,6 +84,46 @@ namespace LegalManagementSystem.Api.Migrations
                     b.ToTable("Clientes");
                 });
 
+            modelBuilder.Entity("LegalManagementSystem.Api.Models.CodigoInvitacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreadoEl")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UsadoEl")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("VenceEl")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("VendedorId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("VendedorId");
+
+                    b.ToTable("CodigosInvitacion");
+                });
+
             modelBuilder.Entity("LegalManagementSystem.Api.Models.Documento", b =>
                 {
                     b.Property<int>("Id")
@@ -312,15 +352,23 @@ namespace LegalManagementSystem.Api.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<DateTime?>("PruebaHasta")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
+                    b.Property<int?>("VendedorId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Slug")
                         .IsUnique();
+
+                    b.HasIndex("VendedorId");
 
                     b.ToTable("Tenants");
                 });
@@ -339,6 +387,9 @@ namespace LegalManagementSystem.Api.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("EsVendedor")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -395,6 +446,20 @@ namespace LegalManagementSystem.Api.Migrations
                     b.HasOne("LegalManagementSystem.Api.Models.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LegalManagementSystem.Api.Models.CodigoInvitacion", b =>
+                {
+                    b.HasOne("LegalManagementSystem.Api.Models.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalManagementSystem.Api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("VendedorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -481,6 +546,14 @@ namespace LegalManagementSystem.Api.Migrations
                     b.Navigation("Expediente");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LegalManagementSystem.Api.Models.Tenant", b =>
+                {
+                    b.HasOne("LegalManagementSystem.Api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("VendedorId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("LegalManagementSystem.Api.Models.User", b =>

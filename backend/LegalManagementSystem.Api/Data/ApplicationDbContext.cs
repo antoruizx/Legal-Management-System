@@ -23,6 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<PasswordResetCode> PasswordResetCodes => Set<PasswordResetCode>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<ArchivoGuardado> ArchivosGuardados => Set<ArchivoGuardado>();
+    public DbSet<CodigoInvitacion> CodigosInvitacion => Set<CodigoInvitacion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +32,19 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Tenant>()
             .HasIndex(t => t.Slug)
             .IsUnique();
+
+        modelBuilder.Entity<Tenant>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(t => t.VendedorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<CodigoInvitacion>(e =>
+        {
+            e.HasIndex(c => c.Codigo).IsUnique();
+            e.HasOne<User>().WithMany().HasForeignKey(c => c.VendedorId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Tenant>().WithMany().HasForeignKey(c => c.TenantId).OnDelete(DeleteBehavior.SetNull);
+        });
 
         void ConfigurarTenant<T>(ModelBuilder mb) where T : class
         {

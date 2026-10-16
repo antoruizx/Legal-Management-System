@@ -28,6 +28,11 @@ public class SetTenantActiveRequest
     public bool Active { get; set; }
 }
 
+public class ExtenderPruebaRequest
+{
+    public int Dias { get; set; } = Tenant.DiasDePrueba;
+}
+
 [ApiController]
 [Route("api/[controller]")]
 public class TenantsController : ControllerBase
@@ -53,21 +58,59 @@ public class TenantsController : ControllerBase
         // El superadmin también pertenece a un estudio: sin IgnoreQueryFilters solo vería sus propios usuarios
         var usuarios = await _context.Users.IgnoreQueryFilters()
             .OrderBy(u => u.Id)
-            .Select(u => new { u.TenantId, u.Email, u.Role })
+            .Select(u => new { u.Id, u.TenantId, u.Email, u.Role, u.FirstName, u.LastName, u.EsVendedor })
             .ToListAsync();
 
         var tenants = await _context.Tenants.OrderBy(t => t.Id).ToListAsync();
 
-        return Ok(tenants.Select(t => new
+        return Ok(tenants.Select(t =>
         {
-            t.Id,
-            t.Name,
-            t.Slug,
-            t.CreatedAt,
-            t.Active,
-            Usuarios = usuarios.Count(u => u.TenantId == t.Id),
-            AdminEmail = usuarios.FirstOrDefault(u => u.TenantId == t.Id && u.Role == Roles.Admin)?.Email
+            var vendedor = usuarios.FirstOrDefault(u => u.Id == t.VendedorId);
+            return new
+            {
+                t.Id,
+                t.Name,
+                t.Slug,
+                t.CreatedAt,
+                t.Active,
+                t.PruebaHasta,
+                Vendedor = vendedor == null ? null : $"{vendedor.FirstName} {vendedor.LastName}",
+                // Estudio de demostración de un vendedor (no es un cliente)
+                EsDeVendedor = usuarios.Any(u => u.TenantId == t.Id && u.EsVendedor),
+                Usuarios = usuarios.Count(u => u.TenantId == t.Id),
+                AdminEmail = usuarios.FirstOrDefault(u => u.TenantId == t.Id && u.Role == Roles.Admin)?.Email
+            };
         }));
+    }
+
+    // PUT: api/Tenants/5/extender-prueba  (suma días desde hoy o desde el fin actual, lo que sea más tarde)
+    [HttpPut("{id}/extender-prueba")]
+    [Authorize(Policy = "SuperAdmin")]
+    public async Task<IActionResult> ExtenderPrueba(int id, ExtenderPruebaRequest request)
+    {
+        if (request.Dias < 1 || request.Dias > 365)
+            return BadRequest(new { message = "Elegí entre 1 y 365 días" });
+
+        var tenant = await _context.Tenants.FindAsync(id);
+        if (tenant == null) return NotFound();
+
+        var desde = tenant.PruebaHasta > DateTime.UtcNow ? tenant.PruebaHasta.Value : DateTime.UtcNow;
+        tenant.PruebaHasta = desde.AddDays(request.Dias);
+        await _context.SaveChangesAsync();
+        return Ok(new { tenant.PruebaHasta });
+    }
+
+    // PUT: api/Tenants/5/activar-pago  (deja de ser prueba: ya no vence)
+    [HttpPut("{id}/activar-pago")]
+    [Authorize(Policy = "SuperAdmin")]
+    public async Task<IActionResult> ActivarPago(int id)
+    {
+        var tenant = await _context.Tenants.FindAsync(id);
+        if (tenant == null) return NotFound();
+
+        tenant.PruebaHasta = null;
+        await _context.SaveChangesAsync();
+        return NoContent();
     }
 
     // PUT: api/Tenants/5/active
@@ -89,17 +132,26 @@ public class TenantsController : ControllerBase
     // ---------- Alta de estudio ----------
 
     // Alta de un estudio nuevo con su primer usuario Admin. Público: no requiere estar logueado,
-    // pero sí el código de invitación (Registro:Codigo; en producción, variable Registro__Codigo).
+    // pero sí un código de invitación: uno de un solo uso generado por un vendedor (CodigosController)
+    // o el código general Registro:Codigo (en producción, variable Registro__Codigo).
+    // Todo estudio nuevo arranca con Tenant.DiasDePrueba días de prueba; el superadmin lo pasa a pago.
     [HttpPost("register")]
     [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(RegisterTenantRequest request)
     {
-        var codigo = _configuration["Registro:Codigo"];
-        if (string.IsNullOrWhiteSpace(codigo))
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "El registro de estudios no está habilitado" });
+        var codigoIngresado = (request.InvitationCode ?? "").Trim().ToUpperInvariant();
+        var ahora = DateTime.UtcNow;
 
-        if (!CodigoValido(request.InvitationCode, codigo))
-            return BadRequest(new { message = "El código de invitación no es válido" });
+        var codigoVendedor = await _context.CodigosInvitacion
+            .FirstOrDefaultAsync(c => c.Codigo == codigoIngresado && c.UsadoEl == null && c.VenceEl > ahora);
+
+        var codigoGeneral = _configuration["Registro:Codigo"];
+        var esCodigoGeneral = codigoVendedor == null
+            && !string.IsNullOrWhiteSpace(codigoGeneral)
+            && CodigoValido(request.InvitationCode, codigoGeneral);
+
+        if (codigoVendedor == null && !esCodigoGeneral)
+            return BadRequest(new { message = "El código de invitación no es válido o ya fue usado" });
 
         if (string.IsNullOrWhiteSpace(request.StudioName))
             return BadRequest(new { message = "El nombre del estudio es obligatorio" });
@@ -122,13 +174,36 @@ public class TenantsController : ControllerBase
         while (await _context.Tenants.AnyAsync(t => t.Slug == slug))
             slug = $"{slugBase}-{++sufijo}";
 
+        // Se "toma" el código recién ahora, con todos los datos validados (si no, un error de tipeo
+        // en el email lo quemaría). El UPDATE condicional evita que dos registros usen el mismo código.
+        if (codigoVendedor != null)
+        {
+            var tomado = await _context.CodigosInvitacion
+                .Where(c => c.Id == codigoVendedor.Id && c.UsadoEl == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.UsadoEl, ahora));
+            if (tomado == 0)
+                return BadRequest(new { message = "El código de invitación no es válido o ya fue usado" });
+        }
+
+        // El estudio del dueño de Foja (email en SuperAdmin:Emails) no tiene prueba que venza
+        var esDelSuperAdmin = _tokenService.EsSuperAdmin(new User { Email = email });
+
         var tenant = new Tenant
         {
             Name = request.StudioName.Trim(),
-            Slug = slug
+            Slug = slug,
+            PruebaHasta = esDelSuperAdmin ? null : ahora.AddDays(Tenant.DiasDePrueba),
+            VendedorId = codigoVendedor?.VendedorId
         };
         _context.Tenants.Add(tenant);
         await _context.SaveChangesAsync(); // necesitamos el Id generado antes de crear el usuario
+
+        if (codigoVendedor != null)
+        {
+            await _context.CodigosInvitacion
+                .Where(c => c.Id == codigoVendedor.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.TenantId, tenant.Id));
+        }
 
         var admin = new User
         {
@@ -160,7 +235,9 @@ public class TenantsController : ControllerBase
             role = admin.Role,
             tenantId = tenant.Id,
             tenantName = tenant.Name,
+            pruebaHasta = tenant.PruebaHasta,
             esSuperAdmin = _tokenService.EsSuperAdmin(admin),
+            esVendedor = false,
             puedeEditarClientes = true,
             puedeEliminarClientes = true,
             puedeEditarExpedientes = true,

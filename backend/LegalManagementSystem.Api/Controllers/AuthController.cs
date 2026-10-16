@@ -90,6 +90,9 @@ public class AuthController : ControllerBase
         if (tenant == null || !tenant.Active)
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Tu estudio está desactivado. Contactá al soporte." });
 
+        if (tenant.PruebaHasta != null && tenant.PruebaHasta < DateTime.UtcNow)
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Tu período de prueba de Foja terminó. Contactá a tu asesor para seguir usando el sistema; tus datos se conservan." });
+
         var token = _tokenService.GenerarToken(user);
 
         return Ok(new
@@ -104,7 +107,9 @@ public class AuthController : ControllerBase
             avatarUrl = user.AvatarUrl,
             tenantId = user.TenantId,
             tenantName = tenant.Name,
+            pruebaHasta = tenant.PruebaHasta,
             esSuperAdmin = _tokenService.EsSuperAdmin(user),
+            esVendedor = user.EsVendedor,
             puedeEditarClientes = user.PuedeEditarClientes,
             puedeEliminarClientes = user.PuedeEliminarClientes,
             puedeEditarExpedientes = user.PuedeEditarExpedientes,

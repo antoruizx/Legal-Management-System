@@ -72,6 +72,9 @@ builder.Services.AddAuthorization(options =>
 {
     // Panel de estudios: solo quienes tienen el claim que pone TokenService según SuperAdmin:Emails
     options.AddPolicy("SuperAdmin", policy => policy.RequireClaim("superAdmin", "true"));
+    // Códigos de prueba: los generan los vendedores (claim que pone TokenService según User.EsVendedor) y el superadmin
+    options.AddPolicy("Vendedor", policy => policy.RequireAssertion(ctx =>
+        ctx.User.HasClaim("vendedor", "true") || ctx.User.HasClaim("superAdmin", "true")));
 });
 // --- Fin configuración de JWT ---
 

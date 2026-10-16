@@ -36,6 +36,9 @@ public class TokenService : ITokenService
         if (EsSuperAdmin(user))
             claims.Add(new Claim("superAdmin", "true"));
 
+        if (user.EsVendedor)
+            claims.Add(new Claim("vendedor", "true"));
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

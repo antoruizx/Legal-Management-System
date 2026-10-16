@@ -111,7 +111,10 @@ export default function Sidebar({ open, onClose }) {
         <NavLink to="/historial" className={linkClass} onClick={onClose}><Icon name="clock" /> Historial</NavLink>
         <NavLink to="/metricas" className={linkClass} onClick={onClose}><Icon name="chart" /> Métricas</NavLink>
         {user?.esSuperAdmin && (
-          <NavLink to="/estudios" className={linkClass} onClick={onClose}><Icon name="wallet" /> Estudios</NavLink>
+          <NavLink to="/estudios" className={linkClass} onClick={onClose}><Icon name="folder" /> Estudios</NavLink>
+        )}
+        {(user?.esSuperAdmin || user?.esVendedor) && (
+          <NavLink to="/codigos" className={linkClass} onClick={onClose}><Icon name="key" /> Códigos de prueba</NavLink>
         )}
 
         <hr className="sidebar-divider" />

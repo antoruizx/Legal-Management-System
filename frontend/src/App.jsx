@@ -18,6 +18,7 @@ import TareaDetalle from "./pages/TareaDetalle";
 import MiPerfil from "./pages/MiPerfil";
 import ConfiguracionUsuarios from "./pages/ConfiguracionUsuarios";
 import Estudios from "./pages/Estudios";
+import CodigosPrueba from "./pages/CodigosPrueba";
 import Honorarios from "./pages/Honorarios";
 import Calendario from "./pages/Calendario";
 import Historial from "./pages/Historial";
@@ -63,6 +64,7 @@ function App() {
               <Route path="/mi-perfil" element={<MiPerfil />} />
               <Route path="/configuracion-usuarios" element={<ConfiguracionUsuarios />} />
               <Route path="/estudios" element={<Estudios />} />
+              <Route path="/codigos" element={<CodigosPrueba />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

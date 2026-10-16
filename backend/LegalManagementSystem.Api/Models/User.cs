@@ -34,6 +34,9 @@ public class User
 
     public string? AvatarUrl { get; set; }
 
+    // Vendedor de Foja: genera códigos de prueba. Lo crea el superadmin, con su propio estudio de demostración.
+    public bool EsVendedor { get; set; } = false;
+
     public bool PuedeEditarClientes { get; set; } = false;
     public bool PuedeEliminarClientes { get; set; } = false;
     public bool PuedeEditarExpedientes { get; set; } = false;
