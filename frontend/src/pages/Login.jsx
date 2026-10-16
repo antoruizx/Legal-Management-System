@@ -3,6 +3,7 @@ import { useNavigate, Link, Navigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
+import PasswordInput from "../components/PasswordInput";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -88,10 +89,9 @@ export default function Login() {
 
             <div className="form-field">
               <label htmlFor="login-password">Contraseña</label>
-              <input
+              <PasswordInput
                 id="login-password"
                 name="password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"

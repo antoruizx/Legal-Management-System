@@ -9,6 +9,7 @@ import {
   crearVendedor,
 } from "../api/tenantsApi";
 import ConfirmDialog from "../components/ConfirmDialog";
+import PasswordInput, { AvisoCoincidencia } from "../components/PasswordInput";
 import { useAuth } from "../context/AuthContext";
 import { estadoComercial } from "../utils/prueba";
 
@@ -41,6 +42,7 @@ export default function Estudios() {
 
   const [mostrarFormVendedor, setMostrarFormVendedor] = useState(false);
   const [nuevoVendedor, setNuevoVendedor] = useState(VENDEDOR_VACIO);
+  const [confirmarPassword, setConfirmarPassword] = useState("");
   const [creandoVendedor, setCreandoVendedor] = useState(false);
   const [errorVendedor, setErrorVendedor] = useState("");
 
@@ -81,8 +83,12 @@ export default function Estudios() {
 
   const handleCrearVendedor = async (e) => {
     e.preventDefault();
-    setCreandoVendedor(true);
     setErrorVendedor("");
+    if (nuevoVendedor.password !== confirmarPassword) {
+      setErrorVendedor("Las contraseñas no coinciden");
+      return;
+    }
+    setCreandoVendedor(true);
     try {
       await crearVendedor({
         firstName: nuevoVendedor.firstName.trim(),
@@ -91,6 +97,7 @@ export default function Estudios() {
         password: nuevoVendedor.password,
       });
       setNuevoVendedor(VENDEDOR_VACIO);
+      setConfirmarPassword("");
       setMostrarFormVendedor(false);
       await cargar();
     } catch (err) {
@@ -224,7 +231,11 @@ export default function Estudios() {
               <input className="input" placeholder="Nombre" value={nuevoVendedor.firstName} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, firstName: e.target.value })} required />
               <input className="input" placeholder="Apellido" value={nuevoVendedor.lastName} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, lastName: e.target.value })} required />
               <input className="input" type="email" placeholder="Email" value={nuevoVendedor.email} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, email: e.target.value })} required />
-              <input className="input" type="password" placeholder="Contraseña (mín. 8)" minLength={8} autoComplete="new-password" value={nuevoVendedor.password} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, password: e.target.value })} required />
+              <PasswordInput className="input" placeholder="Contraseña (mín. 8)" minLength={8} autoComplete="new-password" value={nuevoVendedor.password} onChange={(e) => setNuevoVendedor({ ...nuevoVendedor, password: e.target.value })} required />
+              <PasswordInput className="input" placeholder="Repetí la contraseña" autoComplete="new-password" value={confirmarPassword} onChange={(e) => setConfirmarPassword(e.target.value)} required />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <AvisoCoincidencia password={nuevoVendedor.password} confirmar={confirmarPassword} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button type="submit" className="btn btn-primary" disabled={creandoVendedor}>

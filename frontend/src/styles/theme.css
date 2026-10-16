@@ -1602,3 +1602,47 @@ input[type="checkbox"] {
   .two-cols,
   .dashboard-bottom { grid-template-columns: 1fr; }
 }
+
+/* ---------- Campo de contraseña con ojito ---------- */
+.password-field {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.inline-form .password-field {
+  flex: 1;
+  min-width: 180px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-lo);
+  cursor: pointer;
+}
+
+.password-toggle:hover { color: var(--link); background: var(--color-primary-light); }
+
+.password-match {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.password-match.ok { color: var(--success); }
+.password-match.error { color: var(--danger); }

@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { getUser, updateUser } from "../api/usersApi";
 import { changePassword, testEmail } from "../api/authApi";
 import BackButton from "../components/BackButton";
+import PasswordInput, { AvisoCoincidencia } from "../components/PasswordInput";
 
 function iniciales(nombre, apellido) {
   return `${nombre?.[0] || ""}${apellido?.[0] || ""}`.toUpperCase();
@@ -330,9 +331,8 @@ export default function MiPerfil() {
 
           <div className="form-field">
             <label htmlFor="pass-actual">Contraseña actual</label>
-            <input
+            <PasswordInput
               id="pass-actual"
-              type="password"
               value={passActual}
               onChange={(e) => setPassActual(e.target.value)}
               autoComplete="current-password"
@@ -342,9 +342,8 @@ export default function MiPerfil() {
 
           <div className="form-field">
             <label htmlFor="pass-nueva">Contraseña nueva</label>
-            <input
+            <PasswordInput
               id="pass-nueva"
-              type="password"
               value={passNueva}
               onChange={(e) => setPassNueva(e.target.value)}
               autoComplete="new-password"
@@ -356,15 +355,15 @@ export default function MiPerfil() {
 
           <div className="form-field">
             <label htmlFor="pass-confirmar">Repetí la contraseña nueva</label>
-            <input
+            <PasswordInput
               id="pass-confirmar"
-              type="password"
               value={passConfirmar}
               onChange={(e) => setPassConfirmar(e.target.value)}
               autoComplete="new-password"
               minLength={8}
               required
             />
+            <AvisoCoincidencia password={passNueva} confirmar={passConfirmar} />
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={cambiandoPass}>

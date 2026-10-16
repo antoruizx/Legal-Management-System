@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getUsers, updateUser, createUser } from "../api/usersApi";
 import { cargarDatosDemo, quitarDatosDemo } from "../api/demoApi";
+import PasswordInput, { AvisoCoincidencia } from "../components/PasswordInput";
 import Icon from "../components/Icon";
 import { useAuth } from "../context/AuthContext";
 import { iniciales } from "../utils/tareas";
@@ -24,6 +25,7 @@ export default function ConfiguracionUsuarios() {
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [nuevo, setNuevo] = useState({ firstName: "", lastName: "", email: "", password: "", role: ROLES_ASIGNABLES[0] });
+  const [confirmarPassword, setConfirmarPassword] = useState("");
   const [creando, setCreando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
 
@@ -69,8 +71,12 @@ export default function ConfiguracionUsuarios() {
 
   const handleCrearUsuario = async (e) => {
     e.preventDefault();
-    setCreando(true);
     setErrorForm("");
+    if (nuevo.password !== confirmarPassword) {
+      setErrorForm("Las contraseñas no coinciden");
+      return;
+    }
+    setCreando(true);
     try {
       await createUser({
         ...nuevo,
@@ -82,6 +88,7 @@ export default function ConfiguracionUsuarios() {
         puedeEliminarTareas: false,
       });
       setNuevo({ firstName: "", lastName: "", email: "", password: "", role: ROLES_ASIGNABLES[0] });
+      setConfirmarPassword("");
       setMostrarForm(false);
       cargarUsers();
     } catch (err) {
@@ -157,8 +164,7 @@ export default function ConfiguracionUsuarios() {
             </div>
             <div className="form-field">
               <label>Contraseña</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={nuevo.password}
                 onChange={(e) => setNuevo({ ...nuevo, password: e.target.value })}
                 required
@@ -166,6 +172,16 @@ export default function ConfiguracionUsuarios() {
                 autoComplete="new-password"
                 placeholder="Mínimo 8 caracteres"
               />
+            </div>
+            <div className="form-field">
+              <label>Repetí la contraseña</label>
+              <PasswordInput
+                value={confirmarPassword}
+                onChange={(e) => setConfirmarPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+              <AvisoCoincidencia password={nuevo.password} confirmar={confirmarPassword} />
             </div>
             <div className="form-field">
               <label>Rol</label>

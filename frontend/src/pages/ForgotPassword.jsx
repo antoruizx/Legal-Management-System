@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import AuthLayout from "../components/AuthLayout";
+import PasswordInput, { AvisoCoincidencia } from "../components/PasswordInput";
 
 const CANALES = [
   { id: "email", label: "Email" },
@@ -321,9 +322,8 @@ export default function ForgotPassword() {
               <form onSubmit={cambiarPassword}>
                 <div className="form-field">
                   <label htmlFor="fp-new">Nueva contraseña</label>
-                  <input
+                  <PasswordInput
                     id="fp-new"
-                    type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     autoComplete="new-password"
@@ -334,15 +334,15 @@ export default function ForgotPassword() {
                 </div>
                 <div className="form-field">
                   <label htmlFor="fp-confirm">Repetí la contraseña</label>
-                  <input
+                  <PasswordInput
                     id="fp-confirm"
-                    type="password"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     autoComplete="new-password"
                     minLength={8}
                     required
                   />
+                  <AvisoCoincidencia password={newPassword} confirmar={confirm} />
                 </div>
                 <button type="submit" className="btn btn-primary login-submit" disabled={loading}>
                   {loading ? "Guardando..." : "Cambiar contraseña"}

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate, Link, Navigate, useSearchParams } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { registerTenant } from "../api/tenantsApi";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
+import PasswordInput, { AvisoCoincidencia } from "../components/PasswordInput";
 
 export default function RegistroEstudio() {
   // El link que mandan los vendedores trae el código: /registro?codigo=FOJA-XXXXXX
@@ -20,11 +21,28 @@ export default function RegistroEstudio() {
   const [confirmar, setConfirmar] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user, login } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Si ya hay sesión iniciada no tiene sentido registrar otro estudio desde acá
-  if (user) return <Navigate to="/dashboard" replace />;
+  // Con una sesión abierta en este navegador (típico: el vendedor probando su propio link)
+  // se avisa en vez de mandar al panel, y se ofrece cerrarla para registrar el estudio.
+  if (user) {
+    return (
+      <AuthLayout>
+        <h2>Ya tenés una sesión abierta</h2>
+        <p className="login-subtitle">
+          Estás conectado como {user.firstName} {user.lastName} ({user.tenantName}). Este link es para que un
+          cliente registre su estudio nuevo.
+        </p>
+        <button type="button" className="btn btn-primary login-submit" onClick={logout}>
+          Cerrar sesión y registrar un estudio
+        </button>
+        <Link to="/dashboard" className="login-link">
+          Volver a mi cuenta
+        </Link>
+      </AuthLayout>
+    );
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -151,10 +169,9 @@ export default function RegistroEstudio() {
 
             <div className="form-field">
               <label htmlFor="registro-password">Contraseña</label>
-              <input
+              <PasswordInput
                 id="registro-password"
                 name="adminPassword"
-                type="password"
                 value={form.adminPassword}
                 onChange={handleChange}
                 placeholder="Mínimo 8 caracteres"
@@ -167,15 +184,15 @@ export default function RegistroEstudio() {
 
             <div className="form-field">
               <label htmlFor="registro-confirmar">Repetí la contraseña</label>
-              <input
+              <PasswordInput
                 id="registro-confirmar"
                 name="confirmar"
-                type="password"
                 value={confirmar}
                 onChange={(e) => setConfirmar(e.target.value)}
                 autoComplete="new-password"
                 required
               />
+              <AvisoCoincidencia password={form.adminPassword} confirmar={confirmar} />
             </div>
 
             <button type="submit" className="btn btn-primary login-submit" disabled={loading}>
